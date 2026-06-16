@@ -9,6 +9,7 @@ import { Helmet } from 'react-helmet-async';
 import tracking from '../utils/tracking';
 import RelatedPosts from './RelatedPosts';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import API_URL from '../config'; // Add this import
 
 // Audio Player Component
 function AudioPlayer({ content, title }) {
@@ -25,7 +26,7 @@ function AudioPlayer({ content, title }) {
       
       const textToRead = plainText.substring(0, 3000);
       
-      const response = await axios.post('http://localhost:5000/api/tts/speak', 
+      const response = await axios.post(`${API_URL}/api/tts/speak`, 
         { text: textToRead, title: title || 'Article' },
         { responseType: 'blob', withCredentials: true, timeout: 60000 }
       );
@@ -282,7 +283,7 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
 
   const fetchPost = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/posts/${slug}`);
+      const response = await axios.get(`${API_URL}/api/posts/${slug}`);
       setPost(response.data);
       await tracking.trackPageView('post', response.data.id);
     } catch (error) {
@@ -297,7 +298,7 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
   const handleAIComment = async () => {
     setAiGeneratingComment(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/ai/comment');
+      const response = await axios.post(`${API_URL}/api/ai/comment`);
       const aiData = response.data;
       setCommentData({
         author: aiData.author,
@@ -321,7 +322,7 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
     }
     
     try {
-      await axios.post(`http://localhost:5000/api/posts/${post.id}/comments`, commentData);
+      await axios.post(`${API_URL}/api/posts/${post.id}/comments`, commentData);
       toast.success('Comment added! Awaiting approval.');
       await tracking.trackAction('comment', `Comment on post: ${post.title}`, post.id, 'post');
       
@@ -336,7 +337,7 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
   const handleDeletePost = async () => {
     if (window.confirm('Are you sure you want to delete this post?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/posts/${post.id}`);
+        await axios.delete(`${API_URL}/api/admin/posts/${post.id}`);
         toast.success('Post deleted');
         await tracking.trackAction('delete_post', `Post: ${post.title}`, post.id, 'post');
         navigate('/blog');
@@ -349,7 +350,7 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:5000${imagePath}`;
+    return `${API_URL}${imagePath}`;
   };
 
   const isHTML = (content) => {
@@ -360,7 +361,7 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
     if (!profileImage || profileImage === 'default-avatar.png') {
       return null;
     }
-    return `http://localhost:5000/static/${profileImage}`;
+    return `${API_URL}/static/${profileImage}`;
   };
 
   const formatDate = (timestamp) => {
@@ -394,7 +395,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
   return (
     <>
       <Helmet>
-    
         <meta name="description" content={metaDescription} />
         <meta name="keywords" content={keywords} />
         <meta name="author" content={post.author?.full_name || post.author?.username || 'Admin'} />
@@ -425,7 +425,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
         
         <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
           <div className="card-body p-4 p-lg-5">
-            {/* Category Badge */}
             {post.category && (
               <div className="mb-3">
                 <span className="badge bg-primary px-3 py-2 rounded-pill">
@@ -435,12 +434,9 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
               </div>
             )}
             
-            {/* Title */}
             <h1 className="fw-bold display-5 mb-4">{post.title}</h1>
             
-            {/* TOP BAR: Author Info on LEFT, Share on RIGHT */}
             <div className="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
-              {/* Left Side - Author Info */}
               <div className="d-flex align-items-center gap-3">
                 <div className="flex-shrink-0">
                   {getAuthorImage(post.author?.profile_image) ? (
@@ -476,7 +472,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
                 </div>
               </div>
               
-              {/* Right Side - Share Button */}
               <div className="mt-2 mt-sm-0">
                 <ShareButton 
                   title={post.title}
@@ -487,7 +482,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
               </div>
             </div>
             
-            {/* Featured Image - KEPT IN ORIGINAL POSITION (below the top bar, above content) */}
             {post.image && (
               <div className="mb-4 text-center">
                 <img
@@ -500,10 +494,8 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
               </div>
             )}
             
-            {/* Audio Player */}
             {post.content && <AudioPlayer content={post.content} title={post.title} />}
             
-            {/* Post Content */}
             <div className="post-detail-content mt-4">
               {isHTML(post.content) ? (
                 <div dangerouslySetInnerHTML={{ __html: post.content }} />
@@ -515,7 +507,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
             </div>
           </div>
           
-          {/* Footer Actions */}
           <div className="card-footer bg-white border-top-0 pb-4 px-4 px-lg-5">
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
               <div className="d-flex gap-2">
@@ -547,7 +538,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
         <RelatedPosts postId={post.id} currentPostSlug={post.slug} />
         <NewsletterSubscribe />
 
-        {/* Comments Section */}
         <div className="card mt-4 border-0 shadow-sm rounded-4">
           <div className="card-body p-4">
             <h5 className="card-title fw-bold mb-3">
@@ -607,7 +597,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
               </p>
             )}
 
-            {/* Add Comment Form */}
             <div className="mt-4 pt-3 border-top">
               <h6 className="mb-3">
                 {replyTo ? `Replying to comment #${replyTo}` : 'Leave a Comment'}
