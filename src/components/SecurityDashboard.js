@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import DataTable from './DataTable';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import API_URL from '../config'; // Add this import
 
 function SecurityDashboard({ isSuperAdmin }) {
   const navigate = useNavigate();
@@ -30,15 +31,15 @@ function SecurityDashboard({ isSuperAdmin }) {
     setLoading(true);
     try {
       if (activeTab === 'logs') {
-        const response = await axios.get(`http://localhost:5000/api/admin/activity-logs?page=${page}&action=${actionFilter}`, { withCredentials: true });
+        const response = await axios.get(`${API_URL}/api/admin/activity-logs?page=${page}&action=${actionFilter}`, { withCredentials: true });
         setActivityLogs(response.data.logs);
         setTotalPages(response.data.pages);
       } else if (activeTab === 'suspicious') {
-        const response = await axios.get(`http://localhost:5000/api/admin/suspicious-activities?page=${page}`, { withCredentials: true });
+        const response = await axios.get(`${API_URL}/api/admin/suspicious-activities?page=${page}`, { withCredentials: true });
         setSuspiciousActivities(response.data.activities);
         setTotalPages(response.data.pages);
       } else if (activeTab === 'stats') {
-        const response = await axios.get('http://localhost:5000/api/admin/security-stats?days=7', { withCredentials: true });
+        const response = await axios.get(`${API_URL}/api/admin/security-stats?days=7`, { withCredentials: true });
         setSecurityStats(response.data);
       }
     } catch (error) {
@@ -51,7 +52,7 @@ function SecurityDashboard({ isSuperAdmin }) {
 
   const resolveActivity = async (activityId) => {
     try {
-      await axios.post(`http://localhost:5000/api/admin/suspicious-activities/${activityId}/resolve`, {}, { withCredentials: true });
+      await axios.post(`${API_URL}/api/admin/suspicious-activities/${activityId}/resolve`, {}, { withCredentials: true });
       toast.success('Activity marked as resolved');
       loadData();
     } catch (error) {
