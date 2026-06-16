@@ -104,7 +104,7 @@ function AppContent() {
       <Toaster position="top-right" />
       
       {isHomePage && (
-        <div className="fullscreen-bg" style={{ backgroundImage: `url(http://localhost:5000/static/index.jpg)` }}></div>
+        <div className="fullscreen-bg" style={{ backgroundImage: `url(${API_URL}0/static/index.jpg)` }}></div>
       )}
 
       <div className="d-flex flex-column min-vh-100">
