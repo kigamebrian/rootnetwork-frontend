@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
-// REMOVE the import line - don't import from public folder
+import API_URL from '../config'; // Add this import
 
 function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLogout }) {
   const navigate = useNavigate();
@@ -32,14 +32,12 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      // Hide topbar when scrolling down past 100px, show when scrolling up
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
         setShowTopbar(false);
       } else if (currentScrollY < lastScrollY) {
         setShowTopbar(true);
       }
       
-      // Add shadow to navbar when scrolled
       setScrolled(currentScrollY > 50);
       setLastScrollY(currentScrollY);
     };
@@ -62,7 +60,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
 
   const fetchNavCategories = async () => {
     try {
-      const response = await axios.get('${process.env.REACT_APP_API_URL}/api/nav-categories', {
+      const response = await axios.get(`${API_URL}/api/nav-categories`, {
         withCredentials: true
       });
       setNavCategories(response.data);
@@ -87,7 +85,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
 
   const fetchTrendingNews = async () => {
     try {
-      const response = await axios.get('${process.env.REACT_APP_API_URL}/api/trending', {
+      const response = await axios.get(`${API_URL}/api/trending`, {
         withCredentials: true
       });
       
@@ -163,7 +161,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
       if (adminData.profile_image.startsWith('http')) {
         setProfileImageUrl(adminData.profile_image);
       } else if (adminData.profile_image && adminData.profile_image !== 'default-avatar.png') {
-        setProfileImageUrl(`${process.env.REACT_APP_API_URL}0/static/${adminData.profile_image}`);
+        setProfileImageUrl(`${API_URL}/static/${adminData.profile_image}`);
       } else {
         setProfileImageUrl(null);
       }
@@ -174,7 +172,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
 
   const checkRegistrationStatus = async () => {
     try {
-      const response = await axios.get('${process.env.REACT_APP_API_URL}0/api/check-registration-status', {
+      const response = await axios.get(`${API_URL}/api/check-registration-status`, {
         withCredentials: true
       });
       setRegistrationOpen(response.data.registration_open);
@@ -198,9 +196,8 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     setProfileImageUrl(null);
   };
 
-  const isCategoryActive = (categoryName) => {
-    const expectedSlug = categoryName.toLowerCase().replace(/\s+/g, '-');
-    return location.pathname === `/category/${expectedSlug}`;
+  const isCategoryActive = (categorySlug) => {
+    return location.pathname === `/category/${categorySlug}`;
   };
 
   return (
@@ -290,7 +287,6 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
       {/* Main Navbar - Sticky at top */}
       <nav className={`navbar navbar-expand-lg navbar-light bg-white main-navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container">
-          {/* USE DIRECT PATH FROM PUBLIC FOLDER - NO IMPORT NEEDED */}
           <a 
             className="navbar-brand" 
             href="#" 
@@ -332,7 +328,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
               {!loadingCategories && navCategories.map((category) => (
                 <li className="nav-item" key={category.id}>
                   <a 
-                    className={`nav-link ${isCategoryActive(category.name) ? 'active fw-bold' : ''}`}
+                    className={`nav-link ${isCategoryActive(category.slug) ? 'active fw-bold' : ''}`}
                     href="#"
                     onClick={(e) => { 
                       e.preventDefault(); 
@@ -344,14 +340,14 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                 </li>
               ))}
               
-              {/* Latest Link (instead of All Posts) */}
+              {/* Latest Link */}
               <li className="nav-item">
                 <a 
                   className={`nav-link ${location.pathname === '/blog' ? 'active fw-bold' : ''}`} 
                   href="#"
                   onClick={(e) => { e.preventDefault(); navigate('/blog'); }}
                 >
-                  <i className=""></i> Latest
+                  Latest
                 </a>
               </li>
               
@@ -361,7 +357,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                   href="#"
                   onClick={(e) => { e.preventDefault(); navigate('/about'); }}
                 >
-                  <i className=""></i> About
+                  About
                 </a>
               </li>
               
@@ -435,7 +431,22 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                       <i className="fas fa-sign-out-alt me-1"></i> Logout
                     </button>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="d-flex gap-2">
+                    <button 
+                      className="btn btn-outline-primary btn-sm rounded-pill px-3"
+                      onClick={() => setShowLogin(true)}
+                    >
+                      <i className="fas fa-sign-in-alt me-1"></i> Login
+                    </button>
+                    <button 
+                      className="btn btn-primary btn-sm rounded-pill px-3"
+                      onClick={() => setShowRegister(true)}
+                    >
+                      <i className="fas fa-user-plus me-1"></i> Register
+                    </button>
+                  </div>
+                )}
               </li>
             </ul>
           </div>
@@ -480,7 +491,6 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
           color: #e74c3c !important;
         }
         
-        /* Sticky Navbar Styles */
         .topbar {
           position: relative;
           z-index: 999;
@@ -499,7 +509,6 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
           box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
         
-        /* Logo hover effect */
         .navbar-brand img {
           transition: transform 0.3s ease;
         }
