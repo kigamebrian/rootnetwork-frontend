@@ -35,7 +35,6 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
 
-
 function AppContent() {
   const { isLoggedIn, adminData, loading, handleLogin, handleLogout, fetchAdminData } = useAuth();
   const [showRegister, setShowRegister] = useState(false);
@@ -100,11 +99,11 @@ function AppContent() {
   }
 
   return (
-    <div className={isHomePage ? "homepage-container": "app-container"}>
+    <div className={isHomePage ? "homepage-container" : "app-container"}>
       <Toaster position="top-right" />
       
       {isHomePage && (
-        <div className="fullscreen-bg" style={{ backgroundImage: `url(${API_URL}0/static/index.jpg)` }}></div>
+        <div className="fullscreen-bg" style={{ backgroundImage: `url(${API_URL}/static/index.jpg)` }}></div>
       )}
 
       <div className="d-flex flex-column min-vh-100">
