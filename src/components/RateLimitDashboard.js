@@ -1,6 +1,8 @@
+// frontend/src/components/RateLimitDashboard.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import API_URL from '../config'; // Add this import
 
 function RateLimitDashboard({ isSuperAdmin }) {
   const [rules, setRules] = useState([]);
@@ -50,7 +52,7 @@ function RateLimitDashboard({ isSuperAdmin }) {
 
   const fetchRules = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/rate-limits/rules', {
+      const response = await axios.get(`${API_URL}/api/rate-limits/rules`, {
         withCredentials: true
       });
       setRules(response.data);
@@ -61,7 +63,7 @@ function RateLimitDashboard({ isSuperAdmin }) {
 
   const fetchBlockedIPs = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/rate-limits/blocked-ips', {
+      const response = await axios.get(`${API_URL}/api/rate-limits/blocked-ips`, {
         withCredentials: true
       });
       setBlockedIPs(response.data);
@@ -72,7 +74,7 @@ function RateLimitDashboard({ isSuperAdmin }) {
 
   const fetchStatus = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/rate-limits/status', {
+      const response = await axios.get(`${API_URL}/api/rate-limits/status`, {
         withCredentials: true
       });
       setStatus(response.data);
@@ -83,7 +85,7 @@ function RateLimitDashboard({ isSuperAdmin }) {
 
   const fetchLogs = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/rate-limits/logs?page=1&per_page=50', {
+      const response = await axios.get(`${API_URL}/api/rate-limits/logs?page=1&per_page=50`, {
         withCredentials: true
       });
       setLogs(response.data.logs || []);
@@ -94,7 +96,7 @@ function RateLimitDashboard({ isSuperAdmin }) {
 
   const createRule = async () => {
     try {
-      await axios.post('http://localhost:5000/api/rate-limits/rules', newRule, {
+      await axios.post(`${API_URL}/api/rate-limits/rules`, newRule, {
         withCredentials: true
       });
       toast.success('Rate limit rule created successfully');
@@ -117,7 +119,7 @@ function RateLimitDashboard({ isSuperAdmin }) {
   const deleteRule = async (ruleId) => {
     if (window.confirm('Are you sure you want to delete this rule?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/rate-limits/rules/${ruleId}`, {
+        await axios.delete(`${API_URL}/api/rate-limits/rules/${ruleId}`, {
           withCredentials: true
         });
         toast.success('Rule deleted successfully');
@@ -131,7 +133,7 @@ function RateLimitDashboard({ isSuperAdmin }) {
 
   const toggleRule = async (rule) => {
     try {
-      await axios.put(`http://localhost:5000/api/rate-limits/rules/${rule.id}`, {
+      await axios.put(`${API_URL}/api/rate-limits/rules/${rule.id}`, {
         ...rule,
         is_active: !rule.is_active
       }, {
@@ -152,7 +154,7 @@ function RateLimitDashboard({ isSuperAdmin }) {
     }
     
     try {
-      await axios.post('http://localhost:5000/api/rate-limits/blocked-ips', blockIPData, {
+      await axios.post(`${API_URL}/api/rate-limits/blocked-ips`, blockIPData, {
         withCredentials: true
       });
       toast.success(`IP ${blockIPData.ip_address} blocked successfully`);
@@ -168,7 +170,7 @@ function RateLimitDashboard({ isSuperAdmin }) {
   const unblockIP = async (ipAddress) => {
     if (window.confirm(`Unblock ${ipAddress}?`)) {
       try {
-        await axios.delete(`http://localhost:5000/api/rate-limits/blocked-ips/${ipAddress}`, {
+        await axios.delete(`${API_URL}/api/rate-limits/blocked-ips/${ipAddress}`, {
           withCredentials: true
         });
         toast.success(`IP ${ipAddress} unblocked`);
