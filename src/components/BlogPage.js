@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import API_URL from '../config'; // Add this import
 
 function BlogPage({ isLoggedIn }) {
   const navigate = useNavigate();
@@ -83,7 +84,7 @@ function BlogPage({ isLoggedIn }) {
         params.append('category_id', selectedCategory);
       }
       
-      const url = `http://localhost:5000/api/posts?${params.toString()}`;
+      const url = `${API_URL}/api/posts?${params.toString()}`;
       const response = await axios.get(url);
       
       setPosts(response.data.posts || []);
@@ -98,7 +99,7 @@ function BlogPage({ isLoggedIn }) {
 
   const fetchFeaturedPost = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/posts?page=1&per_page=1');
+      const response = await axios.get(`${API_URL}/api/posts?page=1&per_page=1`);
       if (response.data.posts && response.data.posts.length > 0) {
         setFeaturedPost(response.data.posts[0]);
       }
@@ -109,7 +110,7 @@ function BlogPage({ isLoggedIn }) {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/categories');
+      const response = await axios.get(`${API_URL}/api/categories`);
       setCategories(response.data || []);
     } catch (error) {
       console.error('Failed to fetch categories', error);
@@ -153,7 +154,7 @@ function BlogPage({ isLoggedIn }) {
     
     try {
       // If you have a newsletter endpoint
-      // await axios.post('http://localhost:5000/api/subscribe', { email: newsletterEmail });
+      // await axios.post(`${API_URL}/api/subscribe`, { email: newsletterEmail });
       setNewsletterStatus({ type: 'success', message: 'Subscribed successfully! Check your email.' });
       setNewsletterEmail('');
       
@@ -170,7 +171,7 @@ function BlogPage({ isLoggedIn }) {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:5000${imagePath}`;
+    return `${API_URL}${imagePath}`;
   };
 
   const getPageNumbers = () => {
