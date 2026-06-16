@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
 import DataTable from './DataTable';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import API_URL from '../config'; // Add this import
 
 function Profile({ isLoggedIn, adminData, onUpdate }) {
   useDocumentTitle('Profile', 'RootNetwork');
@@ -37,7 +38,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
   const fetchUserProfile = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/user/profile', {
+      const response = await axios.get(`${API_URL}/api/user/profile`, {
         withCredentials: true,
         params: { page: currentPage, per_page: 10 }
       });
@@ -92,7 +93,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
 
     setUploadingImage(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/upload-profile-image', uploadData, {
+      const response = await axios.post(`${API_URL}/api/upload-profile-image`, uploadData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true
       });
@@ -132,7 +133,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
         updateData.password = formData.password;
       }
       
-      await axios.put('http://localhost:5000/api/user/profile', updateData, {
+      await axios.put(`${API_URL}/api/user/profile`, updateData, {
         withCredentials: true
       });
       
@@ -205,12 +206,12 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
               <div className="mb-3">
                 {profileData?.profile_image && profileData.profile_image !== 'default-avatar.png' ? (
                   <img
-                    src={`http://localhost:5000/static/${profileData.profile_image}`}
+                    src={`${API_URL}/static/${profileData.profile_image}`}
                     alt="Profile"
                     className="rounded-circle"
                     style={{ width: '150px', height: '150px', objectFit: 'cover', border: '3px solid #667eea' }}
                     onError={(e) => {
-                      e.target.src = 'http://localhost:5000/static/default-avatar.png';
+                      e.target.src = `${API_URL}/static/default-avatar.png`;
                     }}
                   />
                 ) : (
