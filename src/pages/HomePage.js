@@ -40,8 +40,8 @@ function HomePage() {
     setLoading(true);
     try {
       const [postsRes, categoriesRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/posts?page=1&per_page=30', { withCredentials: true }),
-        axios.get('http://localhost:5000/api/categories', { withCredentials: true })
+        axios.get('${API_URL}/api/posts?page=1&per_page=30', { withCredentials: true }),
+        axios.get('${API_URL}/api/categories', { withCredentials: true })
       ]);
       
       const allPosts = postsRes.data.posts || [];
@@ -77,7 +77,7 @@ function HomePage() {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:5000${imagePath}`;
+    return `${API_URL}${imagePath}`;
   };
 
   if (loading) {
