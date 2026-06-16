@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import tracking from '../utils/tracking';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import API_URL from '../config'; // Add this import
 
 function HomePage() {
   const [featuredPosts, setFeaturedPosts] = useState([]);
@@ -40,8 +41,8 @@ function HomePage() {
     setLoading(true);
     try {
       const [postsRes, categoriesRes] = await Promise.all([
-        axios.get('${API_URL}/api/posts?page=1&per_page=30', { withCredentials: true }),
-        axios.get('${API_URL}/api/categories', { withCredentials: true })
+        axios.get(`${API_URL}/api/posts?page=1&per_page=30`, { withCredentials: true }),
+        axios.get(`${API_URL}/api/categories`, { withCredentials: true })
       ]);
       
       const allPosts = postsRes.data.posts || [];
@@ -144,7 +145,7 @@ function HomePage() {
                         />
                       )}
                       <div className="card-body">
-                        <span className="badge bg-primary mb-2 ">{post.category?.name || 'News'}</span>
+                        <span className="badge bg-primary mb-2">{post.category?.name || 'News'}</span>
                         <h5 className="card-title">
                           <Link to={`/blog/post/${post.slug}`} className="text-dark text-decoration-none">
                             {post.title}
