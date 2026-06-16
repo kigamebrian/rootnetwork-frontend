@@ -28,9 +28,8 @@ import SetupRoute from './pages/SetupRoute';
 // Hooks & Utils
 import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
-
-// Use environment variable for API URL
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+// frontend/src/App.js
+import API_URL from './config';
 
 axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
