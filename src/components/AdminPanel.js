@@ -1,4 +1,4 @@
-// frontend/src/components/AdminPanel.js - CORRECTED VERSION
+// frontend/src/components/AdminPanel.js - FIXED VERSION
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -7,6 +7,7 @@ import DataTable from './DataTable';
 import RateLimitDashboard from './RateLimitDashboard';
 import { useNavigate } from 'react-router-dom';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import API_URL from '../config'; // Add this import
 
 // Extract PostModal as a separate memoized component
 const PostModal = React.memo(({ 
@@ -22,7 +23,8 @@ const PostModal = React.memo(({
   cancelEdit, 
   isUpdating, 
   isCreating, 
-  editorKey 
+  editorKey,
+  API_URL // Pass API_URL as prop
 }) => {
   if (!showCreateForm && !editingPost) return null;
   
@@ -71,7 +73,7 @@ const PostModal = React.memo(({
               <div className="border rounded p-3">
                 {postForm.image && (
                   <div className="mb-3">
-                    <img src={postForm.image.startsWith('http') ? postForm.image : `http://localhost:5000${postForm.image}`} alt="Featured" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover' }} />
+                    <img src={postForm.image.startsWith('http') ? postForm.image : `${API_URL}${postForm.image}`} alt="Featured" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover' }} />
                     <button type="button" className="btn btn-sm btn-danger mt-2" onClick={() => setPostForm({...postForm, image: ''})}>Remove Image</button>
                   </div>
                 )}
@@ -161,9 +163,15 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
   }, [commentFilter, postStatusFilter]);
 
+  // API wrapper functions
+  const apiGet = (endpoint) => axios.get(`${API_URL}${endpoint}`, { withCredentials: true });
+  const apiPost = (endpoint, data) => axios.post(`${API_URL}${endpoint}`, data, { withCredentials: true });
+  const apiPut = (endpoint, data) => axios.put(`${API_URL}${endpoint}`, data, { withCredentials: true });
+  const apiDelete = (endpoint) => axios.delete(`${API_URL}${endpoint}`, { withCredentials: true });
+
   const fetchCategoryLimit = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/categories/limit', { withCredentials: true });
+      const response = await apiGet('/api/admin/categories/limit');
       setCategoryLimit(response.data);
     } catch (error) {
       console.error('Failed to fetch category limit:', error);
@@ -174,9 +182,9 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     setLoading(true);
     try {
       const [postsRes, commentsRes, categoriesRes] = await Promise.all([
-        axios.get(`http://localhost:5000/api/admin/posts?status=${postStatusFilter}`, { withCredentials: true }),
-        axios.get(`http://localhost:5000/api/admin/comments?filter=${commentFilter}`, { withCredentials: true }),
-        axios.get('http://localhost:5000/api/admin/categories', { withCredentials: true })
+        apiGet(`/api/admin/posts?status=${postStatusFilter}`),
+        apiGet(`/api/admin/comments?filter=${commentFilter}`),
+        apiGet('/api/admin/categories')
       ]);
       
       setPosts(postsRes.data.posts || postsRes.data || []);
@@ -192,7 +200,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
 
   const loadUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/users', { withCredentials: true });
+      const response = await apiGet('/api/admin/users');
       setUsers(response.data.users || response.data || []);
     } catch (error) {
       console.error('Failed to load users:', error);
@@ -203,7 +211,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   // Trending News Functions
   const fetchTrendingNews = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/trending', { withCredentials: true });
+      const response = await apiGet('/api/admin/trending');
       setTrendingNews(response.data);
     } catch (error) {
       console.error('Failed to fetch trending news:', error);
@@ -214,7 +222,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     e.preventDefault();
     if (!newTrendingHeadline.trim()) return;
     try {
-      await axios.post('http://localhost:5000/api/admin/trending', { headline: newTrendingHeadline }, { withCredentials: true });
+      await apiPost('/api/admin/trending', { headline: newTrendingHeadline });
       toast.success('Trending news added! It will expire in 12 hours.');
       setNewTrendingHeadline('');
       fetchTrendingNews();
@@ -226,7 +234,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const handleDeleteTrending = async (id) => {
     if (window.confirm('Delete this trending news?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/trending/${id}`, { withCredentials: true });
+        await apiDelete(`/api/admin/trending/${id}`);
         toast.success('Trending news deleted');
         fetchTrendingNews();
       } catch (error) {
@@ -243,7 +251,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
       return;
     }
     try {
-      await axios.post('http://localhost:5000/api/admin/users', userForm, { withCredentials: true });
+      await apiPost('/api/admin/users', userForm);
       toast.success('User created successfully. Welcome email sent.');
       setShowUserModal(false);
       setUserForm({ email: '', username: '', full_name: '', password: '', is_super_admin: false, is_active: true });
@@ -256,7 +264,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/admin/users/${editingUser.id}`, userForm, { withCredentials: true });
+      await apiPut(`/api/admin/users/${editingUser.id}`, userForm);
       toast.success('User updated successfully');
       setEditingUser(null);
       setUserForm({ email: '', username: '', full_name: '', password: '', is_super_admin: false, is_active: true });
@@ -278,7 +286,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
     if (window.confirm(`Delete user "${username}"?`)) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, { withCredentials: true });
+        await apiDelete(`/api/admin/users/${userId}`);
         toast.success('User deleted successfully');
         loadUsers();
       } catch (error) {
@@ -303,7 +311,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     formData.append('image', file);
     setUploadingImage(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/upload-post-image', formData, {
+      const response = await axios.post(`${API_URL}/api/upload-post-image`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true
       });
@@ -338,7 +346,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
     setIsCreating(true);
     try {
-      await axios.post('http://localhost:5000/api/admin/posts', postForm, { withCredentials: true });
+      await apiPost('/api/admin/posts', postForm);
       toast.success('Post created successfully!');
       setPostForm({ title: '', content: '', category_id: '', image: '', status: 'draft', scheduled_for: '' });
       setShowCreateForm(false);
@@ -371,7 +379,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
     setIsUpdating(true);
     try {
-      await axios.put(`http://localhost:5000/api/admin/posts/${editingPost.id}`, postForm, { withCredentials: true });
+      await apiPut(`/api/admin/posts/${editingPost.id}`, postForm);
       toast.success('Post updated successfully!');
       setEditingPost(null);
       setPostForm({ title: '', content: '', category_id: '', image: '', status: 'draft', scheduled_for: '' });
@@ -387,7 +395,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const handleDeletePost = async (postId) => {
     if (window.confirm('Delete this post?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/posts/${postId}`, { withCredentials: true });
+        await apiDelete(`/api/admin/posts/${postId}`);
         toast.success('Post deleted');
         loadData();
       } catch (error) {
@@ -399,7 +407,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   // Comment Management Functions
   const handleApproveComment = async (commentId) => {
     try {
-      await axios.post(`http://localhost:5000/api/admin/comments/${commentId}/approve`, {}, { withCredentials: true });
+      await apiPost(`/api/admin/comments/${commentId}/approve`, {});
       toast.success('Comment approved');
       loadData();
     } catch (error) {
@@ -410,7 +418,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const handleDeleteComment = async (commentId) => {
     if (window.confirm('Delete this comment?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/comments/${commentId}`, { withCredentials: true });
+        await apiDelete(`/api/admin/comments/${commentId}`);
         toast.success('Comment deleted');
         loadData();
       } catch (error) {
@@ -425,7 +433,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     if (!newCategory) return;
     setAddingCategory(true);
     try {
-      await axios.post('http://localhost:5000/api/admin/categories', { name: newCategory }, { withCredentials: true });
+      await apiPost('/api/admin/categories', { name: newCategory });
       toast.success('Category created successfully!');
       setNewCategory('');
       loadData();
@@ -442,7 +450,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const handleDeleteCategory = async (categoryId) => {
     if (window.confirm('Delete this category?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/categories/${categoryId}`, { withCredentials: true });
+        await apiDelete(`/api/admin/categories/${categoryId}`);
         toast.success('Category deleted successfully');
         loadData();
         fetchCategoryLimit();
@@ -454,7 +462,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
 
   const startEditPost = async (post) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/admin/posts/${post.slug}`, { withCredentials: true });
+      const response = await apiGet(`/api/admin/posts/${post.slug}`);
       const fullPost = response.data;
       setEditingPost(fullPost);
       setPostForm({
@@ -480,7 +488,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     setIsCreating(false);
   };
 
-  // Render functions for tabs
+  // Render functions for tabs (same as before, no changes needed)
   const renderPostsTab = () => (
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
@@ -765,6 +773,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
         isUpdating={isUpdating}
         isCreating={isCreating}
         editorKey={editorKey}
+        API_URL={API_URL} // Pass API_URL to PostModal
       />
       
       {showUserModal && (
