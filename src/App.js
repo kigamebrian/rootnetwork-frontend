@@ -100,7 +100,7 @@ function AppContent() {
   }
 
   return (
-    <div className={isHomePage ? "homepage-container" : "app-container"}>
+    <div className={isHomePage ? "homepage-container": "app-container"}>
       <Toaster position="top-right" />
       
       {isHomePage && (
