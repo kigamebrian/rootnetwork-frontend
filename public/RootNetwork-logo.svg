@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 970.75 244.64">
+  <defs>
+    <style>
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        stroke: #07255b;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-1, .cls-2, .cls-5 {
+        fill: #07255b;
+      }
+
+      .cls-1, .cls-4 {
+        stroke-linecap: round;
+        stroke-width: 8px;
+      }
+
+      .cls-6 {
+        letter-spacing: 0em;
+      }
+
+      .cls-3, .cls-4 {
+        fill: none;
+      }
+
+      .cls-5 {
+        font-family: ArchivoCondensed-Bold, 'Archivo Condensed';
+        font-size: 127px;
+        font-weight: 700;
+      }
+
+      .cls-7 {
+        letter-spacing: 0em;
+      }
+
+      .cls-8 {
+        letter-spacing: -.03em;
+      }
+    </style>
+  </defs>
+  <path class="cls-4" d="M87.89,62.61c1.29,5.57,3.56,13.64,7.71,22.77,9.06,19.94,20.43,30.36,29.43,41.34,9.27,11.31,20.51,28.71,28.38,55.01"/>
+  <path class="cls-4" d="M162.17,21.62c-.76,9.93-2.62,23.47-7.36,38.89-4.02,13.07-9.91,32.22-24.88,50.45-19.25,23.44-43.81,33.55-70.42,44.5-12.28,5.05-22.89,8.38-30.48,10.51"/>
+  <path class="cls-4" d="M118.11,122.17c-12.43,14.82-18.89,28.48-22.51,38.54-10.5,29.16-8.53,59.67-19.71,62.01-1.17.25-2.18.12-2.8,0"/>
+  <path class="cls-4" d="M120.65,122.17c-12.25-9.58-28.63-20.66-49.23-30.48-20.3-9.68-38.95-15.42-53.96-18.92"/>
+  <path class="cls-4" d="M223.49,69.62c-15.3,4.52-33.41,11.14-52.91,21.02-20.31,10.29-36.93,21.49-49.93,31.53"/>
+  <path class="cls-4" d="M122.1,121.06c6.82,9.52,17.93,21.64,34.81,29.14,7.43,3.3,13.73,4.7,22.77,6.66,10.87,2.36,26.35,4.88,45.55,5.26"/>
+  <path class="cls-4" d="M118.11,122.17c-4.34-3.35-10.72-8.44-18.31-15.07-4.6-4.02-5.46-4.95-7.36-5.61-9.27-3.19-21.02,7.9-32.93,19.56-11.48,11.24-25.13,24.98-40.29,41.05"/>
+  <line class="cls-4" x1="218.23" y1="157.91" x2="155.16" y2="95.9"/>
+  <line class="cls-4" x1="82.29" y1="17.41" x2="19.22" y2="76.28"/>
+  <line class="cls-4" x1="163.92" y1="17.41" x2="77.78" y2="21.62"/>
+  <line class="cls-4" x1="223.49" y1="80.48" x2="160.42" y2="14.61"/>
+  <line class="cls-4" x1="220.33" y1="157.91" x2="219.46" y2="76.28"/>
+  <line class="cls-4" x1="159.54" y1="221.33" x2="224.36" y2="157.91"/>
+  <line class="cls-4" x1="162.17" y1="220.01" x2="80.73" y2="219"/>
+  <line class="cls-4" x1="19.22" y1="155.46" x2="82.29" y2="219.92"/>
+  <line class="cls-4" x1="21.85" y1="76.28" x2="21.85" y2="157.91"/>
+  <circle class="cls-2" cx="163.92" cy="18.27" r="17.77"/>
+  <circle class="cls-2" cx="77.78" cy="18.27" r="17.77"/>
+  <circle class="cls-2" cx="18.27" cy="75.07" r="17.77"/>
+  <circle class="cls-2" cx="19.22" cy="162.11" r="17.77"/>
+  <circle class="cls-2" cx="77.78" cy="221.33" r="17.77"/>
+  <circle class="cls-1" cx="162.17" cy="222.87" r="17.77"/>
+  <circle class="cls-3" cx="163.92" cy="220.03" r="17.77"/>
+  <circle class="cls-2" cx="221.38" cy="162.11" r="17.77"/>
+  <circle class="cls-2" cx="221.38" cy="76.28" r="17.77"/>
+  <circle class="cls-1" cx="122.1" cy="63.39" r="7.56"/>
+  <circle class="cls-1" cx="120.65" cy="179.88" r="7.56"/>
+  <text class="cls-5" transform="translate(280.6 155.52)"><tspan class="cls-7" x="0" y="0">R</tspan><tspan x="71.88" y="0">ootNet</tspan><tspan class="cls-6" x="397.5" y="0">w</tspan><tspan x="479.04" y="0">or</tspan><tspan class="cls-8" x="577.84" y="0">k</tspan></text>
+</svg>
