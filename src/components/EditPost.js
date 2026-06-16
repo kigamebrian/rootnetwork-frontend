@@ -5,6 +5,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import RichTextEditor from './RichTextEditor';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import API_URL from '../config'; // Add this import
 
 function EditPost({ isLoggedIn, currentUserId, isSuperAdmin }) {
   const { slug } = useParams();
@@ -43,7 +44,7 @@ function EditPost({ isLoggedIn, currentUserId, isSuperAdmin }) {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/categories');
+      const response = await axios.get(`${API_URL}/api/admin/categories`);
       setCategories(response.data || []);
     } catch (error) {
       console.error('Failed to fetch categories', error);
@@ -52,7 +53,7 @@ function EditPost({ isLoggedIn, currentUserId, isSuperAdmin }) {
 
   const fetchPost = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/admin/posts/${slug}`);
+      const response = await axios.get(`${API_URL}/api/admin/posts/${slug}`);
       const post = response.data;
       
       if (!isSuperAdmin && post.author_id !== currentUserId) {
@@ -97,7 +98,7 @@ function EditPost({ isLoggedIn, currentUserId, isSuperAdmin }) {
 
     setUploadingImage(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/upload-post-image', formDataImg, {
+      const response = await axios.post(`${API_URL}/api/upload-post-image`, formDataImg, {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true
       });
@@ -124,7 +125,7 @@ function EditPost({ isLoggedIn, currentUserId, isSuperAdmin }) {
     
     setAiGenerating(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/ai/write', {
+      const response = await axios.post(`${API_URL}/api/ai/write`, {
         category_id: formData.category_id,
         title: formData.title
       }, { withCredentials: true });
@@ -161,12 +162,12 @@ function EditPost({ isLoggedIn, currentUserId, isSuperAdmin }) {
     
     try {
       if (slug) {
-        const postResponse = await axios.get(`http://localhost:5000/api/posts/${slug}`);
+        const postResponse = await axios.get(`${API_URL}/api/posts/${slug}`);
         const postId = postResponse.data.id;
-        await axios.put(`http://localhost:5000/api/admin/posts/${postId}`, formData, { withCredentials: true });
+        await axios.put(`${API_URL}/api/admin/posts/${postId}`, formData, { withCredentials: true });
         toast.success('Post updated successfully!');
       } else {
-        await axios.post('http://localhost:5000/api/admin/posts', formData, { withCredentials: true });
+        await axios.post(`${API_URL}/api/admin/posts`, formData, { withCredentials: true });
         toast.success('Post created successfully!');
       }
       navigate('/admin');
@@ -187,7 +188,7 @@ function EditPost({ isLoggedIn, currentUserId, isSuperAdmin }) {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:5000${imagePath}`;
+    return `${API_URL}${imagePath}`;
   };
 
   if (loading) {
