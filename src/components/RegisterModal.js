@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import API_URL from '../config'; // Add this import
 
 function RegisterModal({ showRegister, setShowRegister, onRegisterSuccess }) {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ function RegisterModal({ showRegister, setShowRegister, onRegisterSuccess }) {
 
   const checkRegistrationStatus = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/check-registration-status');
+      const response = await axios.get(`${API_URL}/api/check-registration-status`);
       setRegistrationOpen(response.data.registration_open);
       if (!response.data.registration_open) {
         toast.error('Registration is closed. Only admin can add users.');
@@ -61,7 +62,7 @@ function RegisterModal({ showRegister, setShowRegister, onRegisterSuccess }) {
     setLoading(true);
     
     try {
-      const response = await axios.post('http://localhost:5000/api/register', {
+      const response = await axios.post(`${API_URL}/api/register`, {
         email: formData.email,
         username: formData.username,
         full_name: formData.full_name,
