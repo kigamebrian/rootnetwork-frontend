@@ -87,7 +87,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
 
   const fetchTrendingNews = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/trending', {
+      const response = await axios.get('${process.env.REACT_APP_API_URL}/api/trending', {
         withCredentials: true
       });
       
@@ -163,7 +163,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
       if (adminData.profile_image.startsWith('http')) {
         setProfileImageUrl(adminData.profile_image);
       } else if (adminData.profile_image && adminData.profile_image !== 'default-avatar.png') {
-        setProfileImageUrl(`http://localhost:5000/static/${adminData.profile_image}`);
+        setProfileImageUrl(`${process.env.REACT_APP_API_URL}0/static/${adminData.profile_image}`);
       } else {
         setProfileImageUrl(null);
       }
@@ -174,7 +174,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
 
   const checkRegistrationStatus = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/check-registration-status', {
+      const response = await axios.get('${process.env.REACT_APP_API_URL}0/api/check-registration-status', {
         withCredentials: true
       });
       setRegistrationOpen(response.data.registration_open);
