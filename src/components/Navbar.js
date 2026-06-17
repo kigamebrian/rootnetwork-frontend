@@ -25,7 +25,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
   const [navCategories, setNavCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
-  // --- Scroll handler (unchanged) ---
+  // --- Scroll handler ---
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -134,7 +134,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     return "Trending Now:";
   };
 
-  // --- Registration status ---
+  // --- Registration status (unused but kept for consistency) ---
   useEffect(() => {
     checkRegistrationStatus();
   }, []);
@@ -183,36 +183,61 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
 
   return (
     <>
-      {/* Topbar - exact same as your local version */}
+      {/* ========== RESPONSIVE TOPBAR ========== */}
       {showTopbar && (
         <div className="topbar bg-dark text-white py-2">
           <div className="container">
-            <div className="d-flex align-items-center justify-content-between flex-wrap">
-              <div className="d-flex align-items-center gap-2">
-                <span className="text-uppercase text-danger me-2 fw-bold">
+            <div className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 gap-sm-0">
+              {/* Left: Weather / Trending */}
+              <div className="d-flex align-items-center gap-2 flex-wrap justify-content-center justify-content-sm-start">
+                <span className="text-uppercase text-danger me-2 fw-bold small">
                   {getLabelText()}
                 </span>
                 {!loadingTrending && trendingData.length > 0 ? (
-                  <div 
-                    className="d-flex align-items-center gap-2"
+                  <div
+                    className="d-flex align-items-center gap-1"
                     onMouseEnter={() => setIsHovering(true)}
                     onMouseLeave={() => setIsHovering(false)}
                   >
-                    <button onClick={prevTrending} className="btn btn-link text-white p-0 me-1" style={{ fontSize: '12px', textDecoration: 'none' }}>
+                    <button
+                      onClick={prevTrending}
+                      className="btn btn-link text-white p-0"
+                      style={{ fontSize: '12px', textDecoration: 'none' }}
+                    >
                       <i className="fas fa-chevron-left"></i>
                     </button>
-                    <span key={animationKey} className="trending-text" style={{ display: 'inline-block', animation: 'fadeInOut 0.5s ease', minWidth: '300px' }}>
+                    <span
+                      key={animationKey}
+                      className="trending-text text-center"
+                      style={{
+                        display: 'inline-block',
+                        animation: 'fadeInOut 0.5s ease',
+                        minWidth: '120px',
+                        maxWidth: '280px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        fontSize: '0.9rem',
+                      }}
+                    >
                       {renderCurrentContent()}
                     </span>
-                    <button onClick={nextTrending} className="btn btn-link text-white p-0 ms-1" style={{ fontSize: '12px', textDecoration: 'none' }}>
+                    <button
+                      onClick={nextTrending}
+                      className="btn btn-link text-white p-0"
+                      style={{ fontSize: '12px', textDecoration: 'none' }}
+                    >
                       <i className="fas fa-chevron-right"></i>
                     </button>
                     {trendingData.length > 1 && (
-                      <div className="d-flex gap-1 ms-2">
+                      <div className="d-none d-sm-flex gap-1 ms-2">
                         {trendingData.map((_, idx) => (
                           <button
                             key={idx}
-                            onClick={() => { setTrendingIndex(idx); setAnimationKey(prev => prev + 1); }}
+                            onClick={() => {
+                              setTrendingIndex(idx);
+                              setAnimationKey(prev => prev + 1);
+                            }}
                             className={`rounded-circle p-0 border-0 ${idx === trendingIndex ? 'bg-danger' : 'bg-secondary'}`}
                             style={{ width: '6px', height: '6px', opacity: idx === trendingIndex ? 1 : 0.5 }}
                           />
@@ -221,19 +246,21 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                     )}
                   </div>
                 ) : (
-                  <span className="trending-text text-muted">
+                  <span className="trending-text text-muted small">
                     {!loadingTrending && 'No updates at the moment'}
                   </span>
                 )}
               </div>
-              <div className="d-flex gap-3 mt-2 mt-sm-0">
-                <span><i className="fas fa-map-marker-alt me-1"></i> Worldwide</span>
-                <Link to="/about" className="text-white text-decoration-none">About</Link>
-                <Link to="/contact" className="text-white text-decoration-none">Contact</Link>
+
+              {/* Right: Location, About, Contact, Social */}
+              <div className="d-flex flex-wrap align-items-center justify-content-center gap-2 gap-sm-3">
+                <span className="small"><i className="fas fa-map-marker-alt me-1"></i> Worldwide</span>
+                <Link to="/about" className="text-white text-decoration-none small">About</Link>
+                <Link to="/contact" className="text-white text-decoration-none small">Contact</Link>
                 <div className="d-flex gap-2">
-                  <a href="#" className="text-white"><i className="fab fa-facebook-f"></i></a>
-                  <a href="#" className="text-white"><i className="fab fa-twitter"></i></a>
-                  <a href="#" className="text-white"><i className="fab fa-youtube"></i></a>
+                  <a href="#" className="text-white small"><i className="fab fa-facebook-f"></i></a>
+                  <a href="#" className="text-white small"><i className="fab fa-twitter"></i></a>
+                  <a href="#" className="text-white small"><i className="fab fa-youtube"></i></a>
                 </div>
               </div>
             </div>
@@ -241,70 +268,160 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         </div>
       )}
 
-      {/* Main Navbar */}
+      {/* ========== MAIN NAVBAR ========== */}
       <nav className={`navbar navbar-expand-lg navbar-light bg-white main-navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container">
-          <a className="navbar-brand" href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }} style={{ padding: '0' }}>
-            <img src="/RootNetwork-logo.svg" alt="RootNetwork" style={{ height: '50px', width: 'auto', maxWidth: '200px' }} />
+          <a
+            className="navbar-brand"
+            href="#"
+            onClick={(e) => { e.preventDefault(); navigate('/'); }}
+            style={{ padding: '0' }}
+          >
+            <img
+              src="/RootNetwork-logo.svg"
+              alt="RootNetwork"
+              style={{ height: '50px', width: 'auto', maxWidth: '200px' }}
+            />
           </a>
-          <button className="navbar-toggler" type="button" onClick={() => setIsOpen(!isOpen)}>
+
+          <button
+            className="navbar-toggler"
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+          >
             <span className="navbar-toggler-icon"></span>
           </button>
+
           <div className={`collapse navbar-collapse ${isOpen ? 'show' : ''}`}>
             <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
               <li className="nav-item">
-                <a className={`nav-link ${location.pathname === '/' ? 'active fw-bold' : ''}`} href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }}>
+                <a
+                  className={`nav-link ${location.pathname === '/' ? 'active fw-bold' : ''}`}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); navigate('/'); }}
+                >
                   <i className="fas fa-home me-1"></i> Home
                 </a>
               </li>
-              {!loadingCategories && navCategories.map((category) => (
-                <li className="nav-item" key={category.id}>
-                  <a className={`nav-link ${isCategoryActive(category.slug) ? 'active fw-bold' : ''}`} href="#" onClick={(e) => { e.preventDefault(); navigate(`/category/${category.slug}`); }}>
-                    {category.name}
-                  </a>
-                </li>
-              ))}
+
+              {/* Dynamic Categories */}
+              {!loadingCategories &&
+                navCategories.map((category) => (
+                  <li className="nav-item" key={category.id}>
+                    <a
+                      className={`nav-link ${isCategoryActive(category.slug) ? 'active fw-bold' : ''}`}
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/category/${category.slug}`);
+                      }}
+                    >
+                      {category.name}
+                    </a>
+                  </li>
+                ))}
+
               <li className="nav-item">
-                <a className={`nav-link ${location.pathname === '/blog' ? 'active fw-bold' : ''}`} href="#" onClick={(e) => { e.preventDefault(); navigate('/blog'); }}>
+                <a
+                  className={`nav-link ${location.pathname === '/blog' ? 'active fw-bold' : ''}`}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); navigate('/blog'); }}
+                >
                   Latest
                 </a>
               </li>
+
               <li className="nav-item">
-                <a className={`nav-link ${location.pathname === '/about' ? 'active fw-bold' : ''}`} href="#" onClick={(e) => { e.preventDefault(); navigate('/about'); }}>
+                <a
+                  className={`nav-link ${location.pathname === '/about' ? 'active fw-bold' : ''}`}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); navigate('/about'); }}
+                >
                   About
                 </a>
               </li>
+
               {isLoggedIn && (
                 <li className="nav-item dropdown">
-                  <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                  <a
+                    className="nav-link dropdown-toggle"
+                    href="#"
+                    role="button"
+                    data-bs-toggle="dropdown"
+                  >
                     <i className="fas fa-cog me-1"></i> Manage
                   </a>
                   <ul className="dropdown-menu">
-                    <li><a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); navigate('/admin'); }}><i className="fas fa-tachometer-alt me-2"></i> Dashboard</a></li>
-                    <li><a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); navigate('/admin/create'); }}><i className="fas fa-plus-circle me-2"></i> New Post</a></li>
+                    <li>
+                      <a
+                        className="dropdown-item"
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); navigate('/admin'); }}
+                      >
+                        <i className="fas fa-tachometer-alt me-2"></i> Dashboard
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="dropdown-item"
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); navigate('/admin/create'); }}
+                      >
+                        <i className="fas fa-plus-circle me-2"></i> New Post
+                      </a>
+                    </li>
                     <li><hr className="dropdown-divider" /></li>
-                    <li><a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); navigate('/profile'); }}><i className="fas fa-user-circle me-2"></i> Profile</a></li>
+                    <li>
+                      <a
+                        className="dropdown-item"
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); navigate('/profile'); }}
+                      >
+                        <i className="fas fa-user-circle me-2"></i> Profile
+                      </a>
+                    </li>
                   </ul>
                 </li>
               )}
+
               <li className="nav-item ms-lg-2 mt-2 mt-lg-0">
                 {isLoggedIn ? (
                   <div className="d-flex align-items-center gap-2">
-                    <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white" style={{ width: '36px', height: '36px', cursor: 'pointer', overflow: 'hidden', backgroundColor: (!profileImageUrl || imageError) ? '#667eea' : 'transparent' }} onClick={() => navigate('/profile')}>
+                    <div
+                      className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                        backgroundColor: (!profileImageUrl || imageError) ? '#667eea' : 'transparent',
+                      }}
+                      onClick={() => navigate('/profile')}
+                    >
                       {profileImageUrl && !imageError ? (
-                        <img src={profileImageUrl} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={handleImageError} />
+                        <img
+                          src={profileImageUrl}
+                          alt="Profile"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={handleImageError}
+                        />
                       ) : (
-                        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{getUserInitial()}</span>
+                        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                          {getUserInitial()}
+                        </span>
                       )}
                     </div>
                     <span className="badge bg-secondary px-3 py-2 rounded-pill">
                       <i className="fas fa-user-circle me-1"></i> {adminData?.username}
                     </span>
-                    <button className="btn btn-outline-danger btn-sm rounded-pill px-3" onClick={handleLogout}>
+                    <button
+                      className="btn btn-outline-danger btn-sm rounded-pill px-3"
+                      onClick={handleLogout}
+                    >
                       <i className="fas fa-sign-out-alt me-1"></i> Logout
                     </button>
                   </div>
-                ) : null}  {/* <-- NO login/register buttons */}
+                ) : null}
               </li>
             </ul>
           </div>
@@ -320,16 +437,54 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
           100% { opacity: 0; transform: translateY(-5px); }
         }
         .trending-text { display: inline-block; }
-        .topbar button { background: transparent; border: none; color: white; cursor: pointer; transition: opacity 0.3s ease; }
+        .topbar button {
+          background: transparent;
+          border: none;
+          color: white;
+          cursor: pointer;
+          transition: opacity 0.3s ease;
+        }
         .topbar button:hover { opacity: 0.7; }
-        .nav-link.active { color: #e74c3c !important; border-bottom: 2px solid #e74c3c; }
+        .nav-link.active {
+          color: #e74c3c !important;
+          border-bottom: 2px solid #e74c3c;
+        }
         .nav-link { transition: all 0.3s ease; }
         .nav-link:hover { color: #e74c3c !important; }
-        .topbar { position: relative; z-index: 999; transition: transform 0.3s ease, opacity 0.3s ease; }
-        .main-navbar { position: sticky; top: 0; z-index: 1000; background: white; transition: box-shadow 0.3s ease; }
-        .main-navbar.scrolled { box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
-        .navbar-brand img { transition: transform 0.3s ease; }
-        .navbar-brand img:hover { transform: scale(1.05); }
+        .topbar {
+          position: relative;
+          z-index: 999;
+          transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .main-navbar {
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          background: white;
+          transition: box-shadow 0.3s ease;
+        }
+        .main-navbar.scrolled {
+          box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .navbar-brand img {
+          transition: transform 0.3s ease;
+        }
+        .navbar-brand img:hover {
+          transform: scale(1.05);
+        }
+        @media (max-width: 576px) {
+          .topbar .trending-text {
+            font-size: 0.8rem;
+            min-width: 80px;
+            max-width: 160px;
+          }
+          .topbar .small {
+            font-size: 0.7rem;
+          }
+          .topbar .gap-2 {
+            gap: 0.25rem !important;
+          }
+        }
       `}</style>
     </>
   );
