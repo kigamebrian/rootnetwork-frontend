@@ -9,7 +9,7 @@ import { Helmet } from 'react-helmet-async';
 import tracking from '../utils/tracking';
 import RelatedPosts from './RelatedPosts';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-import API_URL from '../config'; // Add this import
+import API_URL from '../config';
 
 // Audio Player Component
 function AudioPlayer({ content, title }) {
@@ -357,12 +357,19 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
     return /<[a-z][\s\S]*>/i.test(content);
   };
 
+  // ========== FIXED: handle Cloudinary URLs ==========
   const getAuthorImage = (profileImage) => {
     if (!profileImage || profileImage === 'default-avatar.png') {
       return null;
     }
+    // If it's already a full URL (Cloudinary), return it directly
+    if (profileImage.startsWith('http://') || profileImage.startsWith('https://')) {
+      return profileImage;
+    }
+    // Otherwise, prepend the backend URL
     return `${API_URL}/static/${profileImage}`;
   };
+  // ================================================
 
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleDateString('en-US', { 
