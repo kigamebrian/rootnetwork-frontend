@@ -328,16 +328,6 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                 </a>
               </li>
 
-              <li className="nav-item">
-                <a
-                  className={`nav-link ${location.pathname === '/about' ? 'active fw-bold' : ''}`}
-                  href="#"
-                  onClick={(e) => { e.preventDefault(); navigate('/about'); }}
-                >
-                  About
-                </a>
-              </li>
-
               {isLoggedIn && (
                 <li className="nav-item dropdown">
                   <a
