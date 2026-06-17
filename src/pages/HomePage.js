@@ -1,10 +1,10 @@
-// frontend/src/pages/HomePage.js - Clean Professional Layout (No Travel, No Category Counts)
+// frontend/src/pages/HomePage.js - Clean Professional Layout (No Travel, No Category Counts, No Newsletter)
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import tracking from '../utils/tracking';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-import API_URL from '../config'; // Add this import
+import API_URL from '../config';
 
 function HomePage() {
   const [featuredPosts, setFeaturedPosts] = useState([]);
@@ -304,23 +304,7 @@ function HomePage() {
                   </div>
                 </div>
               </div>
-
-              {/* Newsletter */}
-              <div className="card border-0 bg-primary text-white">
-                <div className="card-body text-center p-4">
-                  <i className="fas fa-envelope-open-text fa-3x mb-3"></i>
-                  <h5 className="fw-bold">Newsletter</h5>
-                  <p className="small">Get the best stories delivered to your inbox</p>
-                  <form onSubmit={(e) => { e.preventDefault(); alert('Coming soon!'); }}>
-                    <div className="mb-2">
-                      <input type="email" className="form-control form-control-sm" placeholder="Your email" required />
-                    </div>
-                    <button type="submit" className="btn btn-light btn-sm w-100 fw-bold">
-                      Subscribe
-                    </button>
-                  </form>
-                </div>
-              </div>
+              {/* Newsletter section REMOVED – it's now in the footer */}
             </div>
           </div>
         </div>
