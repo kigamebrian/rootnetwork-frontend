@@ -255,6 +255,8 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
               {/* Right: Worldwide, About, Contact, Social – hidden on mobile */}
               <div className="d-none d-sm-flex flex-wrap align-items-center justify-content-center gap-2 gap-sm-3">
                 <span className="small"><i className="fas fa-map-marker-alt me-1"></i> Worldwide</span>
+                <Link to="/about" className="text-white text-decoration-none small">About</Link>
+                <Link to="/contact" className="text-white text-decoration-none small">Contact</Link>
                 <div className="d-flex gap-2">
                   <a href="#" className="text-white small"><i className="fab fa-facebook-f"></i></a>
                   <a href="#" className="text-white small"><i className="fab fa-twitter"></i></a>
@@ -325,6 +327,16 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                   onClick={(e) => { e.preventDefault(); navigate('/blog'); }}
                 >
                   Latest
+                </a>
+              </li>
+
+              <li className="nav-item">
+                <a
+                  className={`nav-link ${location.pathname === '/about' ? 'active fw-bold' : ''}`}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); navigate('/about'); }}
+                >
+                  About
                 </a>
               </li>
 
