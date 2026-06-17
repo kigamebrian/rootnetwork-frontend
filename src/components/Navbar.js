@@ -25,7 +25,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
   const [navCategories, setNavCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
-  // --- Scroll handler ---
+  // --- scroll handler ---
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -41,14 +41,14 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // --- Fetch trending news ---
+  // --- fetch trending news ---
   useEffect(() => {
     fetchTrendingNews();
     const refreshInterval = setInterval(fetchTrendingNews, 2 * 60 * 1000);
     return () => clearInterval(refreshInterval);
   }, []);
 
-  // --- Fetch categories ---
+  // --- fetch categories ---
   useEffect(() => {
     fetchNavCategories();
   }, []);
@@ -66,7 +66,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     }
   };
 
-  // --- Trending rotation ---
+  // --- trending rotation ---
   useEffect(() => {
     if (trendingData.length === 0 || isHovering) return;
     const interval = setInterval(() => {
@@ -134,6 +134,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     return "Trending Now:";
   };
 
+  // --- registration status (unused but kept) ---
   useEffect(() => {
     checkRegistrationStatus();
   }, []);
@@ -149,7 +150,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     }
   };
 
-  // --- Profile image ---
+  // --- profile image ---
   useEffect(() => {
     setImageError(false);
     if (adminData?.profile_image) {
@@ -182,13 +183,13 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
 
   return (
     <>
-      {/* ========== RESPONSIVE TOPBAR ========== */}
+      {/* ========== TOPBAR ========== */}
       {showTopbar && (
         <div className="topbar bg-dark text-white py-2">
           <div className="container">
             <div className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-1 gap-sm-0">
-              {/* Left: Weather / Trending */}
-              <div className="d-flex align-items-center gap-2 flex-wrap justify-content-center justify-content-sm-start">
+              {/* Left: Weather / Trending – always visible */}
+              <div className="d-flex align-items-center gap-2 flex-wrap justify-content-center justify-content-sm-start w-100 w-sm-auto">
                 <span className="text-uppercase text-danger me-1 fw-bold small" style={{ fontSize: '0.75rem' }}>
                   {getLabelText()}
                 </span>
@@ -251,12 +252,11 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                 )}
               </div>
 
-              {/* Right: Location, About, Contact, Social */}
-              <div className="d-flex flex-wrap align-items-center justify-content-center gap-1 gap-sm-3">
-                {/* Hide "Worldwide" on very small screens */}
-                <span className="small d-none d-sm-inline"><i className="fas fa-map-marker-alt me-1"></i> Worldwide</span>
-                <Link to="/about" className="text-white text-decoration-none small d-none d-sm-inline">About</Link>
-                <Link to="/contact" className="text-white text-decoration-none small d-none d-sm-inline">Contact</Link>
+              {/* Right: Worldwide, About, Contact, Social – hidden on mobile */}
+              <div className="d-none d-sm-flex flex-wrap align-items-center justify-content-center gap-2 gap-sm-3">
+                <span className="small"><i className="fas fa-map-marker-alt me-1"></i> Worldwide</span>
+                <Link to="/about" className="text-white text-decoration-none small">About</Link>
+                <Link to="/contact" className="text-white text-decoration-none small">Contact</Link>
                 <div className="d-flex gap-2">
                   <a href="#" className="text-white small"><i className="fab fa-facebook-f"></i></a>
                   <a href="#" className="text-white small"><i className="fab fa-twitter"></i></a>
@@ -471,7 +471,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         .navbar-brand img:hover {
           transform: scale(1.05);
         }
-        /* Phone-specific overrides */
+        /* Phone overrides */
         @media (max-width: 576px) {
           .topbar .trending-text {
             font-size: 0.75rem;
