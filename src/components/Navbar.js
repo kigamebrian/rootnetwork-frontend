@@ -48,7 +48,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     return () => clearInterval(refreshInterval);
   }, []);
 
-  // --- Fetch categories for navigation ---
+  // --- Fetch categories ---
   useEffect(() => {
     fetchNavCategories();
   }, []);
@@ -134,7 +134,6 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     return "Trending Now:";
   };
 
-  // --- Registration status (unused but kept for consistency) ---
   useEffect(() => {
     checkRegistrationStatus();
   }, []);
@@ -187,10 +186,10 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
       {showTopbar && (
         <div className="topbar bg-dark text-white py-2">
           <div className="container">
-            <div className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 gap-sm-0">
+            <div className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-1 gap-sm-0">
               {/* Left: Weather / Trending */}
               <div className="d-flex align-items-center gap-2 flex-wrap justify-content-center justify-content-sm-start">
-                <span className="text-uppercase text-danger me-2 fw-bold small">
+                <span className="text-uppercase text-danger me-1 fw-bold small" style={{ fontSize: '0.75rem' }}>
                   {getLabelText()}
                 </span>
                 {!loadingTrending && trendingData.length > 0 ? (
@@ -212,12 +211,12 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                       style={{
                         display: 'inline-block',
                         animation: 'fadeInOut 0.5s ease',
-                        minWidth: '120px',
-                        maxWidth: '280px',
+                        minWidth: '80px',
+                        maxWidth: '200px',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        fontSize: '0.9rem',
+                        fontSize: '0.85rem',
                       }}
                     >
                       {renderCurrentContent()}
@@ -253,10 +252,11 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
               </div>
 
               {/* Right: Location, About, Contact, Social */}
-              <div className="d-flex flex-wrap align-items-center justify-content-center gap-2 gap-sm-3">
-                <span className="small"><i className="fas fa-map-marker-alt me-1"></i> Worldwide</span>
-                <Link to="/about" className="text-white text-decoration-none small">About</Link>
-                <Link to="/contact" className="text-white text-decoration-none small">Contact</Link>
+              <div className="d-flex flex-wrap align-items-center justify-content-center gap-1 gap-sm-3">
+                {/* Hide "Worldwide" on very small screens */}
+                <span className="small d-none d-sm-inline"><i className="fas fa-map-marker-alt me-1"></i> Worldwide</span>
+                <Link to="/about" className="text-white text-decoration-none small d-none d-sm-inline">About</Link>
+                <Link to="/contact" className="text-white text-decoration-none small d-none d-sm-inline">Contact</Link>
                 <div className="d-flex gap-2">
                   <a href="#" className="text-white small"><i className="fab fa-facebook-f"></i></a>
                   <a href="#" className="text-white small"><i className="fab fa-twitter"></i></a>
@@ -304,7 +304,6 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                 </a>
               </li>
 
-              {/* Dynamic Categories */}
               {!loadingCategories &&
                 navCategories.map((category) => (
                   <li className="nav-item" key={category.id}>
@@ -472,17 +471,22 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         .navbar-brand img:hover {
           transform: scale(1.05);
         }
+        /* Phone-specific overrides */
         @media (max-width: 576px) {
           .topbar .trending-text {
-            font-size: 0.8rem;
-            min-width: 80px;
-            max-width: 160px;
+            font-size: 0.75rem;
+            min-width: 60px;
+            max-width: 140px;
           }
           .topbar .small {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
           }
           .topbar .gap-2 {
             gap: 0.25rem !important;
+          }
+          .topbar .py-2 {
+            padding-top: 0.3rem !important;
+            padding-bottom: 0.3rem !important;
           }
         }
       `}</style>
