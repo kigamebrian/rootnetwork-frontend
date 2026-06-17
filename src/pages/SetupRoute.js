@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config'; // Import the environment-based API URL
 
 function SetupRoute({ setShowRegister, isLoggedIn, adminData }) {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ function SetupRoute({ setShowRegister, isLoggedIn, adminData }) {
 
   const checkAndRedirect = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/check-registration-status', {
+      const response = await axios.get(`${API_URL}/api/check-registration-status`, {
         withCredentials: true
       });
       
