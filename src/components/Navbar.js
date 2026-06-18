@@ -384,6 +384,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                 </li>
               )}
 
+              {/* ===== USER AVATAR – NO LOGIN/LOGOUT BUTTONS ===== */}
               <li className="nav-item ms-lg-2 mt-2 mt-lg-0">
                 {isLoggedIn ? (
                   <div className="d-flex align-items-center gap-2">
@@ -414,30 +415,9 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                     <span className="badge bg-secondary px-3 py-2 rounded-pill">
                       <i className="fas fa-user-circle me-1"></i> {adminData?.username}
                     </span>
-                    <button
-                      className="btn btn-outline-danger btn-sm rounded-pill px-3"
-                      onClick={handleLogout}
-                    >
-                      <i className="fas fa-sign-out-alt me-1"></i> Logout
-                    </button>
+                    {/* ===== LOGOUT BUTTON REMOVED ===== */}
                   </div>
-                ) : (
-                  // ---------- LOGIN / REGISTER BUTTONS ----------
-                  <div className="d-flex gap-2">
-                    <button
-                      className="btn btn-outline-primary btn-sm rounded-pill px-3"
-                      onClick={() => setShowLogin(true)}
-                    >
-                      <i className="fas fa-sign-in-alt me-1"></i> Login
-                    </button>
-                    <button
-                      className="btn btn-primary btn-sm rounded-pill px-3"
-                      onClick={() => setShowRegister(true)}
-                    >
-                      <i className="fas fa-user-plus me-1"></i> Register
-                    </button>
-                  </div>
-                )}
+                ) : null}
               </li>
             </ul>
           </div>
@@ -489,7 +469,6 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         .navbar-brand img:hover {
           transform: scale(1.05);
         }
-        /* Phone overrides – hide right side of topbar */
         @media (max-width: 576px) {
           .topbar .trending-text {
             font-size: 0.75rem;
