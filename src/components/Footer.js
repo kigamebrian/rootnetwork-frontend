@@ -2,13 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
-import API_URL from '../config'; // <-- ADDED
+import API_URL from '../config';   // <-- import config
 
 function Footer({ isLoggedIn, adminData, handleLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [navCategories, setNavCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  
+  // Subscription state
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [subLoading, setSubLoading] = useState(false);
 
   useEffect(() => {
     const fetchNavCategories = async () => {
@@ -31,6 +36,42 @@ function Footer({ isLoggedIn, adminData, handleLogout }) {
     navigate('/login', { state: { backgroundLocation: location } });
   };
 
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    
+    if (!email) {
+      setMessage('Please enter your email address.');
+      return;
+    }
+
+    setSubLoading(true);
+    setMessage('');
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/subscribe`,
+        {
+          email: email,
+          categories: [],
+          frequency: 'daily'
+        },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true
+        }
+      );
+
+      setMessage(response.data.message || 'Check your email to confirm!');
+      setEmail('');
+    } catch (error) {
+      console.error('Subscription error:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to subscribe. Please try again.';
+      setMessage(errorMsg);
+    } finally {
+      setSubLoading(false);
+    }
+  };
+
   return (
     <footer className="footer">
       <div className="container">
@@ -42,8 +83,8 @@ function Footer({ isLoggedIn, adminData, handleLogout }) {
                 <img src="/RootNetwork-logo.svg" alt="RootNetwork" style={{ height: '40px', width: 'auto' }} />
               </Link>
               <p style={{ marginTop: '16px', color: '#6c757d' }}>
-                  Amplifying voices, inspiring conversations, 
-                  and empowering communities through stories that matter
+                Amplifying voices, inspiring conversations, 
+                and empowering communities through stories that matter
               </p>
             </div>
           </div>
@@ -77,14 +118,33 @@ function Footer({ isLoggedIn, adminData, handleLogout }) {
             </div>
           </div>
 
+          {/* Newsletter with working subscription */}
           <div className="col-lg-4">
             <div className="footer-wizard">
               <h6>Newsletter</h6>
-              <form onSubmit={(e) => e.preventDefault()}>
+              <form onSubmit={handleSubscribe}>
                 <div className="footer-wizard-form d-flex flex-column flex-sm-row align-items-start align-items-sm-center">
-                  <input type="email" placeholder="Enter Email" className="form-control mb-2 mb-sm-0" />
-                  <button className="btn btn-default btn-default-sm">Subscribe</button>
+                  <input 
+                    type="email" 
+                    placeholder="Enter Email" 
+                    className="form-control mb-2 mb-sm-0 me-sm-2"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  <button 
+                    type="submit" 
+                    className="btn btn-default btn-default-sm"
+                    disabled={subLoading}
+                  >
+                    {subLoading ? 'Subscribing...' : 'Subscribe'}
+                  </button>
                 </div>
+                {message && (
+                  <small className="text-muted mt-2 d-block" style={{ color: message.includes('error') ? '#dc3545' : '#28a745' }}>
+                    {message}
+                  </small>
+                )}
               </form>
             </div>
           </div>
@@ -156,10 +216,15 @@ function Footer({ isLoggedIn, adminData, handleLogout }) {
           border: none;
           transition: 0.3s all linear;
         }
-        .btn-default:hover {
-          background-color: #07255b;
+        .btn-default:hover:not(:disabled) {
+          background-color: #0a3a8a;
           color: white;
         }
+        .btn-default:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        
         .copy-right {
           display: flex;
           align-items: center;
@@ -175,6 +240,7 @@ function Footer({ isLoggedIn, adminData, handleLogout }) {
           color: #6c757d;
           font-size: 14px;
         }
+        
         .footer-links {
           display: flex;
           align-items: center;
@@ -194,6 +260,7 @@ function Footer({ isLoggedIn, adminData, handleLogout }) {
           color: #dee2e6;
           font-size: 14px;
         }
+        
         .footer-auth .btn-link {
           font-size: 14px;
           color: #6c757d;
@@ -202,6 +269,7 @@ function Footer({ isLoggedIn, adminData, handleLogout }) {
         .footer-auth .btn-link:hover {
           color: #07255b !important;
         }
+        
         @media (max-width: 991px) {
           .footer {
             padding-top: 50px;
