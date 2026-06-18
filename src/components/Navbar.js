@@ -25,7 +25,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
   const [navCategories, setNavCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
-  // --- scroll handler ---
+  // ---------- SCROLL ----------
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -41,14 +41,14 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // --- fetch trending news ---
+  // ---------- FETCH TRENDING ----------
   useEffect(() => {
     fetchTrendingNews();
     const refreshInterval = setInterval(fetchTrendingNews, 2 * 60 * 1000);
     return () => clearInterval(refreshInterval);
   }, []);
 
-  // --- fetch categories ---
+  // ---------- FETCH CATEGORIES ----------
   useEffect(() => {
     fetchNavCategories();
   }, []);
@@ -59,14 +59,14 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         withCredentials: true
       });
       setNavCategories(response.data);
+      setLoadingCategories(false);
     } catch (error) {
       console.error('Failed to fetch nav categories:', error);
-    } finally {
       setLoadingCategories(false);
     }
   };
 
-  // --- trending rotation ---
+  // ---------- TRENDING ROTATION ----------
   useEffect(() => {
     if (trendingData.length === 0 || isHovering) return;
     const interval = setInterval(() => {
@@ -91,9 +91,9 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         setTrendingData(result.data || []);
       }
       setTrendingIndex(0);
+      setLoadingTrending(false);
     } catch (error) {
       console.error('Failed to fetch trending news:', error);
-    } finally {
       setLoadingTrending(false);
     }
   };
@@ -134,7 +134,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     return "Trending Now:";
   };
 
-  // --- registration status (unused but kept) ---
+  // ---------- REGISTRATION STATUS ----------
   useEffect(() => {
     checkRegistrationStatus();
   }, []);
@@ -150,7 +150,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     }
   };
 
-  // --- profile image ---
+  // ---------- PROFILE IMAGE ----------
   useEffect(() => {
     setImageError(false);
     if (adminData?.profile_image) {
@@ -177,8 +177,9 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     setProfileImageUrl(null);
   };
 
-  const isCategoryActive = (categorySlug) => {
-    return location.pathname === `/category/${categorySlug}`;
+  // ---------- CATEGORY ACTIVE ----------
+  const isCategoryActive = (slug) => {
+    return location.pathname === `/category/${slug}`;
   };
 
   return (
@@ -188,8 +189,8 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         <div className="topbar bg-dark text-white py-2">
           <div className="container">
             <div className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-1 gap-sm-0">
-              {/* Left: Weather / Trending – always visible */}
-              <div className="d-flex align-items-center gap-2 flex-wrap justify-content-center justify-content-sm-start w-100 w-sm-auto">
+              {/* LEFT: Trending / Weather (always visible) */}
+              <div className="d-flex align-items-center gap-2 flex-wrap justify-content-center justify-content-sm-start">
                 <span className="text-uppercase text-danger me-1 fw-bold small" style={{ fontSize: '0.75rem' }}>
                   {getLabelText()}
                 </span>
@@ -252,7 +253,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                 )}
               </div>
 
-              {/* Right: Worldwide, About, Contact, Social – hidden on mobile */}
+              {/* RIGHT: Worldwide, About, Contact, Socials – hidden on mobile */}
               <div className="d-none d-sm-flex flex-wrap align-items-center justify-content-center gap-2 gap-sm-3">
                 <span className="small"><i className="fas fa-map-marker-alt me-1"></i> Worldwide</span>
                 <Link to="/about" className="text-white text-decoration-none small">About</Link>
@@ -387,13 +388,13 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                 {isLoggedIn ? (
                   <div className="d-flex align-items-center gap-2">
                     <div
-                      className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white"
+                      className="rounded-circle d-flex align-items-center justify-content-center text-white"
                       style={{
                         width: '36px',
                         height: '36px',
                         cursor: 'pointer',
                         overflow: 'hidden',
-                        backgroundColor: (!profileImageUrl || imageError) ? '#667eea' : 'transparent',
+                        backgroundColor: (!profileImageUrl || imageError) ? '#07255b' : 'transparent',
                       }}
                       onClick={() => navigate('/profile')}
                     >
@@ -420,7 +421,23 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                       <i className="fas fa-sign-out-alt me-1"></i> Logout
                     </button>
                   </div>
-                ) : null}
+                ) : (
+                  // ---------- LOGIN / REGISTER BUTTONS ----------
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-outline-primary btn-sm rounded-pill px-3"
+                      onClick={() => setShowLogin(true)}
+                    >
+                      <i className="fas fa-sign-in-alt me-1"></i> Login
+                    </button>
+                    <button
+                      className="btn btn-primary btn-sm rounded-pill px-3"
+                      onClick={() => setShowRegister(true)}
+                    >
+                      <i className="fas fa-user-plus me-1"></i> Register
+                    </button>
+                  </div>
+                )}
               </li>
             </ul>
           </div>
@@ -445,11 +462,12 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         }
         .topbar button:hover { opacity: 0.7; }
         .nav-link.active {
-          color: #e74c3c !important;
-          border-bottom: 2px solid #e74c3c;
+          color: #07255b !important;
+          border-bottom: 2px solid #07255b;
         }
         .nav-link { transition: all 0.3s ease; }
-        .nav-link:hover { color: #e74c3c !important; }
+        .nav-link:hover { color: #07255b !important; }
+        .bg-theme { background-color: #07255b !important; }
         .topbar {
           position: relative;
           z-index: 999;
@@ -471,7 +489,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         .navbar-brand img:hover {
           transform: scale(1.05);
         }
-        /* Phone overrides */
+        /* Phone overrides – hide right side of topbar */
         @media (max-width: 576px) {
           .topbar .trending-text {
             font-size: 0.75rem;
