@@ -12,12 +12,12 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import RegisterModal from './components/RegisterModal';
 import LoginModalContent from './components/LoginModalContent';
+import AdminPanel from './components/AdminPanel';   // <-- fixed import
 
 // Pages
 import HomePage from './pages/HomePage';
 import BlogPage from './components/BlogPage';
 import AboutPage from './pages/AboutPage';
-import AdminPanel from './pages/admin/AdminPanel';
 import PostDetail from './components/PostDetail';
 import EditPost from './components/EditPost';
 import AnalyticsPage from './components/AnalyticsPage';
