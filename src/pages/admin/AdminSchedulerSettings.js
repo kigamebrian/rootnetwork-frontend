@@ -1,10 +1,12 @@
 // frontend/src/pages/admin/AdminSchedulerSettings.js
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';   // <-- add this
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import API_URL from '../../config';
 
 function AdminSchedulerSettings() {
+  const navigate = useNavigate();   // <-- useNavigate hook
   const [settings, setSettings] = useState({
     daily_digest_hour: '8',
     daily_digest_minute: '0',
@@ -85,11 +87,30 @@ function AdminSchedulerSettings() {
           border-color: #07255b;
           box-shadow: 0 0 0 0.2rem rgba(7, 37, 91, 0.25);
         }
+        .btn-back {
+          background: none;
+          border: none;
+          color: #07255b;
+          font-weight: 500;
+          padding: 0.5rem 1rem;
+          transition: 0.3s;
+        }
+        .btn-back:hover {
+          background-color: #f0f2f5;
+          border-radius: 8px;
+        }
       `}</style>
 
-      <h2 className="mb-4" style={{ color: '#07255b' }}>
-        <i className="fas fa-clock me-2"></i>Scheduler Settings
-      </h2>
+      {/* Back button */}
+      <div className="d-flex align-items-center gap-3 mb-4">
+        <button className="btn-back" onClick={() => navigate('/admin')}>
+          <i className="fas fa-arrow-left me-2"></i> Back to Admin
+        </button>
+        <h2 className="mb-0" style={{ color: '#07255b' }}>
+          <i className="fas fa-clock me-2"></i>Scheduler Settings
+        </h2>
+      </div>
+
       <div className="card shadow-sm border-0">
         <div className="card-body">
           <form onSubmit={handleSubmit}>
