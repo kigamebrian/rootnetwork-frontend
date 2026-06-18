@@ -1,5 +1,5 @@
-// frontend/src/components/AdminPanel.js - FIXED VERSION
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+// frontend/src/components/AdminPanel.js - FINAL (with Subscribers & Scheduler)
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import RichTextEditor from './RichTextEditor';
@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import API_URL from '../config'; // Add this import
 
-// Extract PostModal as a separate memoized component
+// ========== PostModal (unchanged) ==========
 const PostModal = React.memo(({ 
   showCreateForm, 
   editingPost, 
@@ -24,7 +24,7 @@ const PostModal = React.memo(({
   isUpdating, 
   isCreating, 
   editorKey,
-  API_URL // Pass API_URL as prop
+  API_URL 
 }) => {
   if (!showCreateForm && !editingPost) return null;
   
@@ -98,11 +98,12 @@ const PostModal = React.memo(({
   );
 });
 
+// ========== Main AdminPanel ==========
 function AdminPanel({ isSuperAdmin, currentUserId }) {
   useDocumentTitle('Dashboard', 'RootNetwork');
   const navigate = useNavigate();
   
-  // Data states
+  // --- Data states ---
   const [posts, setPosts] = useState([]);
   const [comments, setComments] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -110,7 +111,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const [trendingNews, setTrendingNews] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // UI states
+  // --- UI states ---
   const [activeTab, setActiveTab] = useState('posts');
   const [commentFilter, setCommentFilter] = useState('all');
   const [postStatusFilter, setPostStatusFilter] = useState('all');
@@ -130,11 +131,11 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   
-  // Category limit state
+  // --- Category limit ---
   const [categoryLimit, setCategoryLimit] = useState({ max: 5, current: 0, can_add: true, remaining: 5 });
   const [addingCategory, setAddingCategory] = useState(false);
   
-  // User management state
+  // --- User management ---
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [userForm, setUserForm] = useState({
@@ -146,14 +147,23 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     is_active: true
   });
 
-  // Stable editor key
+  // --- Subscribers state ---
+  const [subscribers, setSubscribers] = useState([]);
+  const [subscribersLoading, setSubscribersLoading] = useState(false);
+  const [subscriberPage, setSubscriberPage] = useState(1);
+  const [subscriberPerPage, setSubscriberPerPage] = useState(20);
+  const [subscriberSearch, setSubscriberSearch] = useState('');
+  const [subscriberTotal, setSubscriberTotal] = useState(0);
+  const [subscriberTotalPages, setSubscriberTotalPages] = useState(1);
+
+  // --- Stable editor key ---
   const editorKey = useMemo(() => {
     if (editingPost) return `edit-${editingPost.id}`;
     if (showCreateForm) return 'new-post';
     return null;
   }, [editingPost?.id, showCreateForm]);
 
-  // Load data on mount and when filters change
+  // --- Load data ---
   useEffect(() => {
     loadData();
     if (isSuperAdmin) {
@@ -163,12 +173,20 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
   }, [commentFilter, postStatusFilter]);
 
-  // API wrapper functions
+  // --- Fetch subscribers when tab becomes active ---
+  useEffect(() => {
+    if (activeTab === 'subscribers') {
+      fetchSubscribers();
+    }
+  }, [activeTab, subscriberPage, subscriberPerPage, subscriberSearch]);
+
+  // ========== API wrappers ==========
   const apiGet = (endpoint) => axios.get(`${API_URL}${endpoint}`, { withCredentials: true });
   const apiPost = (endpoint, data) => axios.post(`${API_URL}${endpoint}`, data, { withCredentials: true });
   const apiPut = (endpoint, data) => axios.put(`${API_URL}${endpoint}`, data, { withCredentials: true });
   const apiDelete = (endpoint) => axios.delete(`${API_URL}${endpoint}`, { withCredentials: true });
 
+  // ========== Existing functions ==========
   const fetchCategoryLimit = async () => {
     try {
       const response = await apiGet('/api/admin/categories/limit');
@@ -208,7 +226,58 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
   };
 
-  // Trending News Functions
+  // ========== Subscribers ==========
+  const fetchSubscribers = useCallback(async () => {
+    if (!isSuperAdmin) return;
+    setSubscribersLoading(true);
+    try {
+      const res = await apiGet(
+        `/api/admin/subscribers?page=${subscriberPage}&per_page=${subscriberPerPage}&search=${subscriberSearch}`
+      );
+      setSubscribers(res.data.subscribers || []);
+      setSubscriberTotal(res.data.total || 0);
+      setSubscriberTotalPages(res.data.pages || 1);
+    } catch (error) {
+      console.error('Failed to fetch subscribers:', error);
+      toast.error('Failed to load subscribers');
+    } finally {
+      setSubscribersLoading(false);
+    }
+  }, [subscriberPage, subscriberPerPage, subscriberSearch, isSuperAdmin]);
+
+  const handleSubscriberUnsubscribe = async (id, email) => {
+    if (!window.confirm(`Unsubscribe ${email}?`)) return;
+    try {
+      await apiPost(`/api/admin/subscribers/${id}/unsubscribe`, {});
+      toast.success(`Unsubscribed ${email}`);
+      fetchSubscribers();
+    } catch (error) {
+      toast.error('Failed to unsubscribe');
+    }
+  };
+
+  const handleSubscriberResend = async (id, email) => {
+    if (!window.confirm(`Resend verification to ${email}?`)) return;
+    try {
+      await apiPost(`/api/admin/subscribers/${id}/resend-verification`, {});
+      toast.success(`Verification resent to ${email}`);
+    } catch (error) {
+      toast.error('Failed to resend');
+    }
+  };
+
+  const handleSubscriberDelete = async (id, email) => {
+    if (!window.confirm(`Permanently delete ${email}? This cannot be undone.`)) return;
+    try {
+      await apiDelete(`/api/admin/subscribers/${id}`);
+      toast.success(`Deleted ${email}`);
+      fetchSubscribers();
+    } catch (error) {
+      toast.error('Failed to delete');
+    }
+  };
+
+  // ========== Trending ==========
   const fetchTrendingNews = async () => {
     try {
       const response = await apiGet('/api/admin/trending');
@@ -243,7 +312,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
   };
 
-  // User Management Functions
+  // ========== Users ==========
   const handleCreateUser = async (e) => {
     e.preventDefault();
     if (!userForm.email || !userForm.username || !userForm.password) {
@@ -295,7 +364,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
   };
 
-  // Image Upload Function
+  // ========== Image Upload ==========
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -325,7 +394,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
   };
 
-  // Post Management Functions
+  // ========== Posts ==========
   const handleCreatePost = async (e) => {
     e.preventDefault();
     if (isCreating) {
@@ -404,7 +473,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
   };
 
-  // Comment Management Functions
+  // ========== Comments ==========
   const handleApproveComment = async (commentId) => {
     try {
       await apiPost(`/api/admin/comments/${commentId}/approve`, {});
@@ -427,7 +496,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
   };
 
-  // Category Management Functions
+  // ========== Categories ==========
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     if (!newCategory) return;
@@ -488,11 +557,11 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     setIsCreating(false);
   };
 
-  // Render functions for tabs (same as before, no changes needed)
+  // ========== Render functions ==========
   const renderPostsTab = () => (
     <>
       <div className="mb-3 d-flex justify-content-between align-items-center">
-        <button className="btn btn-success" onClick={() => setShowCreateForm(true)}>
+        <button className="btn btn-theme" onClick={() => setShowCreateForm(true)}>
           <i className="fas fa-plus me-1"></i> Create New Post
         </button>
         <div className="d-flex gap-2">
@@ -575,7 +644,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
 
   const renderCategoriesTab = () => (
     <>
-      <div className="card mb-3">
+      <div className="card mb-3 border-theme">
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="mb-0">Add New Category</h5>
@@ -600,7 +669,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
           )}
           <form onSubmit={handleCreateCategory} className="d-flex gap-2">
             <input type="text" className="form-control" placeholder="New Category Name" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} required disabled={!categoryLimit.can_add || addingCategory} />
-            <button type="submit" className="btn btn-primary" disabled={!categoryLimit.can_add || addingCategory}>
+            <button type="submit" className="btn btn-theme" disabled={!categoryLimit.can_add || addingCategory}>
               {addingCategory ? <span className="spinner-border spinner-border-sm me-1"></span> : <i className="fas fa-plus me-1"></i>}
               Add Category
             </button>
@@ -638,7 +707,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const renderUsersTab = () => (
     <>
       <div className="d-flex justify-content-end mb-3">
-        <button className="btn btn-primary" onClick={() => { setEditingUser(null); setUserForm({ email: '', username: '', full_name: '', password: '', is_super_admin: false, is_active: true }); setShowUserModal(true); }}>
+        <button className="btn btn-theme" onClick={() => { setEditingUser(null); setUserForm({ email: '', username: '', full_name: '', password: '', is_super_admin: false, is_active: true }); setShowUserModal(true); }}>
           <i className="fas fa-user-plus me-1"></i> Add User
         </button>
       </div>
@@ -679,17 +748,19 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   );
 
   const renderTrendingTab = () => (
-    <div className="card">
+    <div className="card shadow-sm border-0">
       <div className="card-body">
         <h4><i className="fas fa-fire text-danger me-2"></i> Trending News Management</h4>
         <p className="text-muted small mb-3">Trending news automatically expires after 12 hours.</p>
         <form onSubmit={handleCreateTrending} className="d-flex gap-2 mb-4">
-          <input type="text" className="form-control form-control-lg" placeholder="Enter trending headline..." value={newTrendingHeadline} onChange={(e) => setNewTrendingHeadline(e.target.value)} required />
-          <button type="submit" className="btn btn-primary btn-lg"><i className="fas fa-plus me-1"></i> Add Headline</button>
+          <input type="text" className="form-control" placeholder="Enter trending headline..." value={newTrendingHeadline} onChange={(e) => setNewTrendingHeadline(e.target.value)} required />
+          <button type="submit" className="btn btn-theme">
+            <i className="fas fa-plus me-1"></i> Add Headline
+          </button>
         </form>
         <div className="table-responsive">
           <table className="table table-striped table-hover">
-            <thead className="table-dark">
+            <thead className="bg-theme text-white">
               <tr>
                 <th>Headline</th>
                 <th>Status</th>
@@ -727,27 +798,232 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     </div>
   );
 
+  // ========== NEW: Render Subscribers Tab ==========
+  const renderSubscribersTab = () => (
+    <div>
+      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <div className="d-flex gap-2 align-items-center">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search by email..."
+            value={subscriberSearch}
+            onChange={(e) => setSubscriberSearch(e.target.value)}
+            style={{ width: '250px' }}
+          />
+          <button className="btn btn-outline-secondary" onClick={() => { setSubscriberPage(1); fetchSubscribers(); }}>
+            <i className="fas fa-search"></i>
+          </button>
+          <div className="d-flex align-items-center gap-2">
+            <label className="text-muted small mb-0">Show:</label>
+            <select
+              className="form-select form-select-sm"
+              value={subscriberPerPage}
+              onChange={(e) => {
+                setSubscriberPerPage(Number(e.target.value));
+                setSubscriberPage(1);
+              }}
+              style={{ width: 'auto', minWidth: '70px' }}
+            >
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+        <span className="text-muted">Total: {subscriberTotal}</span>
+      </div>
+      {subscribersLoading ? (
+        <div className="text-center py-4"><div className="spinner-border" /></div>
+      ) : (
+        <>
+          <div className="table-responsive">
+            <table className="table table-striped table-hover">
+              <thead className="bg-theme text-white">
+                <tr>
+                  <th>ID</th>
+                  <th>Email</th>
+                  <th>Verified</th>
+                  <th>Active</th>
+                  <th>Frequency</th>
+                  <th>Categories</th>
+                  <th>Subscribed</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subscribers.map(s => (
+                  <tr key={s.id}>
+                    <td>{s.id}</td>
+                    <td>{s.email}</td>
+                    <td>{s.verified ? '✅' : '❌'}</td>
+                    <td>{s.is_active ? '✅' : '❌'}</td>
+                    <td>{s.preferences?.frequency || 'daily'}</td>
+                    <td>{(s.preferences?.categories || []).length}</td>
+                    <td>{s.subscribed_at ? new Date(s.subscribed_at).toLocaleDateString() : '-'}</td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-warning me-1"
+                        onClick={() => handleSubscriberResend(s.id, s.email)}
+                        disabled={s.verified}
+                        title="Resend verification email"
+                      >
+                        <i className="fas fa-envelope"></i>
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger me-1"
+                        onClick={() => handleSubscriberUnsubscribe(s.id, s.email)}
+                        disabled={!s.is_active}
+                        title="Unsubscribe"
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleSubscriberDelete(s.id, s.email)}
+                        title="Delete permanently"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {subscribers.length === 0 && (
+                  <tr>
+                    <td colSpan="8" className="text-center text-muted py-4">
+                      No subscribers found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {subscriberTotalPages > 1 && (
+            <nav>
+              <ul className="pagination justify-content-center">
+                {[...Array(subscriberTotalPages).keys()].map(p => (
+                  <li key={p} className={`page-item ${p + 1 === subscriberPage ? 'active' : ''}`}>
+                    <button className="page-link" onClick={() => setSubscriberPage(p + 1)}>
+                      {p + 1}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  // ========== Main render ==========
   if (loading) {
     return <div className="text-center py-5"><div className="spinner-border text-primary" role="status"></div></div>;
   }
 
   return (
-    <div>
+    <div className="admin-panel">
+      {/* Theme style overrides */}
+      <style>{`
+        .bg-theme {
+          background-color: #07255b !important;
+        }
+        .text-theme {
+          color: #07255b !important;
+        }
+        .border-theme {
+          border-color: #07255b !important;
+        }
+        .btn-theme {
+          background-color: #07255b;
+          border-color: #07255b;
+          color: white;
+        }
+        .btn-theme:hover {
+          background-color: #0a3a8a;
+          border-color: #0a3a8a;
+          color: white;
+        }
+        .btn-theme:focus {
+          box-shadow: 0 0 0 0.2rem rgba(7, 37, 91, 0.25);
+        }
+        .nav-tabs .nav-link.active {
+          background-color: #07255b;
+          border-color: #07255b;
+          color: white !important;
+        }
+        .nav-tabs .nav-link.active:hover {
+          color: white !important;
+        }
+        .nav-tabs .nav-link:not(.active):hover {
+          border-color: #07255b;
+          color: #07255b;
+        }
+        .page-item.active .page-link {
+          background-color: #07255b;
+          border-color: #07255b;
+        }
+        .modal-header {
+          border-bottom: 2px solid #07255b;
+        }
+        .modal-footer {
+          border-top: 2px solid #07255b;
+        }
+      `}</style>
+
       {isSuperAdmin && (
         <div className="mb-3 d-flex gap-2 flex-wrap">
-          <button className="btn btn-danger" onClick={() => navigate('/admin/security')}><i className="fas fa-shield-alt me-1"></i> Security Dashboard</button>
-          <button className="btn btn-info" onClick={() => navigate('/admin/analytics')}><i className="fas fa-chart-line me-1"></i> View Analytics</button>
+          <button className="btn btn-danger" onClick={() => navigate('/admin/security')}>
+            <i className="fas fa-shield-alt me-1"></i> Security Dashboard
+          </button>
+          <button className="btn btn-info" onClick={() => navigate('/admin/analytics')}>
+            <i className="fas fa-chart-line me-1"></i> View Analytics
+          </button>
+          {/* 👇 NEW: Scheduler Settings button */}
+          <button className="btn btn-theme" onClick={() => navigate('/admin/scheduler')}>
+            <i className="fas fa-clock me-1"></i> Scheduler Settings
+          </button>
         </div>
       )}
       <ul className="nav nav-tabs mb-4">
-        <li className="nav-item"><button className={`nav-link ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}><i className="fas fa-file-alt me-1"></i> Posts ({posts.length})</button></li>
-        <li className="nav-item"><button className={`nav-link ${activeTab === 'comments' ? 'active' : ''}`} onClick={() => setActiveTab('comments')}><i className="fas fa-comments me-1"></i> Comments ({comments.length})</button></li>
+        <li className="nav-item">
+          <button className={`nav-link ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>
+            <i className="fas fa-file-alt me-1"></i> Posts ({posts.length})
+          </button>
+        </li>
+        <li className="nav-item">
+          <button className={`nav-link ${activeTab === 'comments' ? 'active' : ''}`} onClick={() => setActiveTab('comments')}>
+            <i className="fas fa-comments me-1"></i> Comments ({comments.length})
+          </button>
+        </li>
         {isSuperAdmin && (
           <>
-            <li className="nav-item"><button className={`nav-link ${activeTab === 'trending' ? 'active' : ''}`} onClick={() => setActiveTab('trending')}><i className="fas fa-fire me-1 text-danger"></i> Trending ({trendingNews.length})</button></li>
-            <li className="nav-item"><button className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}><i className="fas fa-tags me-1"></i> Categories ({categories.length})</button></li>
-            <li className="nav-item"><button className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}><i className="fas fa-users me-1"></i> Users ({users.length})</button></li>
-            <li className="nav-item"><button className={`nav-link ${activeTab === 'rate-limits' ? 'active' : ''}`} onClick={() => setActiveTab('rate-limits')}><i className="fas fa-tachometer-alt me-1"></i> Rate Limits</button></li>
+            <li className="nav-item">
+              <button className={`nav-link ${activeTab === 'trending' ? 'active' : ''}`} onClick={() => setActiveTab('trending')}>
+                <i className="fas fa-fire me-1 text-danger"></i> Trending ({trendingNews.length})
+              </button>
+            </li>
+            <li className="nav-item">
+              <button className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
+                <i className="fas fa-tags me-1"></i> Categories ({categories.length})
+              </button>
+            </li>
+            <li className="nav-item">
+              <button className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
+                <i className="fas fa-users me-1"></i> Users ({users.length})
+              </button>
+            </li>
+            <li className="nav-item">
+              <button className={`nav-link ${activeTab === 'subscribers' ? 'active' : ''}`} onClick={() => setActiveTab('subscribers')}>
+                <i className="fas fa-envelope me-1"></i> Subscribers ({subscriberTotal})
+              </button>
+            </li>
+            <li className="nav-item">
+              <button className={`nav-link ${activeTab === 'rate-limits' ? 'active' : ''}`} onClick={() => setActiveTab('rate-limits')}>
+                <i className="fas fa-tachometer-alt me-1"></i> Rate Limits
+              </button>
+            </li>
           </>
         )}
       </ul>
@@ -756,9 +1032,10 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
       {activeTab === 'trending' && isSuperAdmin && renderTrendingTab()}
       {activeTab === 'categories' && isSuperAdmin && renderCategoriesTab()}
       {activeTab === 'users' && isSuperAdmin && renderUsersTab()}
+      {activeTab === 'subscribers' && isSuperAdmin && renderSubscribersTab()}
       {activeTab === 'rate-limits' && isSuperAdmin && <RateLimitDashboard isSuperAdmin={isSuperAdmin} />}
       
-      {/* Memoized Post Modal */}
+      {/* Modals */}
       <PostModal 
         showCreateForm={showCreateForm}
         editingPost={editingPost}
@@ -773,7 +1050,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
         isUpdating={isUpdating}
         isCreating={isCreating}
         editorKey={editorKey}
-        API_URL={API_URL} // Pass API_URL to PostModal
+        API_URL={API_URL}
       />
       
       {showUserModal && (
@@ -790,7 +1067,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
                 <div className="mb-3 form-check"><input type="checkbox" className="form-check-input" id="isActive" checked={userForm.is_active} onChange={(e) => setUserForm({...userForm, is_active: e.target.checked})} disabled={editingUser?.id === currentUserId} /><label className="form-check-label" htmlFor="isActive">Active Account</label></div>
               </form>
             </div>
-            <div className="modal-footer"><button type="button" className="btn btn-secondary" onClick={() => setShowUserModal(false)}>Cancel</button><button type="submit" form="userForm" className="btn btn-primary"><i className="fas fa-save me-1"></i> {editingUser ? 'Update User' : 'Create User'}</button></div>
+            <div className="modal-footer"><button type="button" className="btn btn-secondary" onClick={() => setShowUserModal(false)}>Cancel</button><button type="submit" form="userForm" className="btn btn-theme"><i className="fas fa-save me-1"></i> {editingUser ? 'Update User' : 'Create User'}</button></div>
           </div>
         </div>
       )}
