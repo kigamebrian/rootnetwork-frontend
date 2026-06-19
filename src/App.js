@@ -30,7 +30,7 @@ import AdminSchedulerSettings from './pages/admin/AdminSchedulerSettings';
 // Hooks & Utils
 import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
-import API_URL from './config';   // <-- import config
+import API_URL from './config';
 
 // Configure axios
 axios.defaults.baseURL = API_URL;
@@ -44,18 +44,16 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const backgroundLocation = location.state?.backgroundLocation;
+  // Resilient background detection
+  const backgroundLocation = location.state?.backgroundLocation || location.state?.background;
   const isHomePage = location.pathname === '/';
+  const isLoginRoute = location.pathname === '/login';
 
-  // Redirect direct /login visits (without background) to home
-  useEffect(() => {
-    if (location.pathname === '/login' && !backgroundLocation) {
-      navigate('/', { replace: true });
-    }
-  }, [location.pathname, backgroundLocation, navigate]);
+  // NO REDIRECT – we handle /login with full-page fallback
 
-  // Initial check for zero users
+  // Initial check for zero users (only on root, not on /login or /setup)
   useEffect(() => {
+    if (isLoginRoute) return; // let login route handle itself
     const checkInitialUserStatus = async () => {
       try {
         const response = await axios.get('/api/check-registration-status');
@@ -69,7 +67,7 @@ function AppContent() {
       }
     };
     checkInitialUserStatus();
-  }, []);
+  }, [isLoginRoute, location.pathname, navigate]);
 
   // Track page views
   useEffect(() => {
@@ -91,7 +89,7 @@ function AppContent() {
     fetchAdminData();
   };
 
-  // ✅ Close modal and return to the background page
+  // Close modal: go back to the page we came from
   const closeModal = () => {
     setLoginCreds({ identifier: '', password: '' });
     if (backgroundLocation) {
@@ -150,7 +148,7 @@ function AppContent() {
             <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
           </Routes>
 
-          {/* ========== MODAL OVERLAY ========== */}
+          {/* ========== MODAL OVERLAY (when background exists) ========== */}
           {backgroundLocation && (
             <Routes location={backgroundLocation}>
               <Route path="/login" element={
@@ -162,6 +160,20 @@ function AppContent() {
                 />
               } />
             </Routes>
+          )}
+
+          {/* ========== STANDALONE LOGIN PAGE (fallback) ========== */}
+          {!backgroundLocation && isLoginRoute && (
+            <div className="row justify-content-center">
+              <div className="col-md-6 col-lg-5">
+                <LoginModalContent
+                  loginCreds={loginCreds}
+                  setLoginCreds={setLoginCreds}
+                  handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
+                  onClose={() => navigate('/')}
+                />
+              </div>
+            </div>
           )}
         </main>
 
