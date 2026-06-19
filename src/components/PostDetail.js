@@ -301,11 +301,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
         {post.category && <meta property="article:section" content={post.category.name} />}
       </Helmet>
 
-      <div>
-        <button className="btn btn-secondary mb-3" onClick={() => navigate('/blog')}>
-          ← Back to News
-        </button>
-
         <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
           <div className="card-body p-4 p-lg-5">
             {post.category && (
