@@ -44,8 +44,16 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // backgroundLocation is set when navigating to /login with state
   const backgroundLocation = location.state?.backgroundLocation;
   const isHomePage = location.pathname === '/';
+
+  // If user visits /login without backgroundLocation, redirect to home
+  useEffect(() => {
+    if (location.pathname === '/login' && !backgroundLocation) {
+      navigate('/', { replace: true });
+    }
+  }, [location.pathname, backgroundLocation, navigate]);
 
   // Initial check for zero users
   useEffect(() => {
@@ -116,8 +124,8 @@ function AppContent() {
         />
 
         <main className="container" style={{ paddingBottom: '20px', paddingTop: '40px' }}>
-          {/* ========== ALL ROUTES (always use current location) ========== */}
-          <Routes>
+          {/* ========== MAIN ROUTES (background content) ========== */}
+          <Routes location={backgroundLocation || location}>
             <Route path="/" element={<HomePage adminData={adminData} />} />
             <Route path="/blog" element={<BlogPage isLoggedIn={isLoggedIn} />} />
             <Route path="/category/:categorySlug" element={<BlogPage isLoggedIn={isLoggedIn} />} />
