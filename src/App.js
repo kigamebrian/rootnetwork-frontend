@@ -12,7 +12,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import RegisterModal from './components/RegisterModal';
 import LoginModalContent from './components/LoginModalContent';
-import AdminPanel from './components/AdminPanel';
+import AdminPanel from './components/AdminPanel';   // <-- import AdminPanel (not from pages)
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -30,9 +30,9 @@ import AdminSchedulerSettings from './pages/admin/AdminSchedulerSettings';
 // Hooks & Utils
 import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
-import API_URL from './config';
+import API_URL from './config';   // <-- import config
 
-// Configure axios
+// Configure axios – use environment variable
 axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
 
@@ -46,14 +46,13 @@ function AppContent() {
 
   const backgroundLocation = location.state?.backgroundLocation;
   const isHomePage = location.pathname === '/';
-  const isLoginRoute = location.pathname === '/login';
 
-  // Redirect direct /login visits (without background) to home
+  // ⚠️ Redirect direct /login visits (without background) to home
   useEffect(() => {
-    if (isLoginRoute && !backgroundLocation) {
+    if (location.pathname === '/login' && !backgroundLocation) {
       navigate('/', { replace: true });
     }
-  }, [isLoginRoute, backgroundLocation, navigate]);
+  }, [location.pathname, backgroundLocation, navigate]);
 
   // Initial check for zero users
   useEffect(() => {
@@ -92,18 +91,19 @@ function AppContent() {
     fetchAdminData();
   };
 
-  // ✅ Close modal – navigate to background path without state
+  // ✅ Close modal and return to the background page
   const closeModal = () => {
     setLoginCreds({ identifier: '', password: '' });
+    // Navigate back to the background page, clearing the state
     const targetPath = backgroundLocation?.pathname || '/';
-    navigate(targetPath, { replace: true, state: {} }); // clear background state
+    navigate(targetPath, { replace: true, state: {} });
   };
 
   // ✅ Login success handler
   const onLoginSuccess = () => {
     setLoginCreds({ identifier: '', password: '' });
     const targetPath = backgroundLocation?.pathname || '/';
-    // Navigate to background without keeping the background state
+    // Clear background state so modal closes
     navigate(targetPath, { replace: true, state: {} });
   };
 
@@ -116,9 +116,6 @@ function AppContent() {
       </div>
     );
   }
-
-  // 👇 MODAL VISIBILITY CONDITION: only when on /login AND background exists
-  const showModal = isLoginRoute && backgroundLocation;
 
   return (
     <div className={isHomePage ? "homepage-container" : "app-container"}>
@@ -159,16 +156,14 @@ function AppContent() {
             <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
           </Routes>
 
-          {/* ========== MODAL OVERLAY (only when showModal is true) ========== */}
-          {showModal && (
+          {/* ========== MODAL OVERLAY ========== */}
+          {backgroundLocation && (
             <Routes location={backgroundLocation}>
               <Route path="/login" element={
                 <LoginModalContent
                   loginCreds={loginCreds}
                   setLoginCreds={setLoginCreds}
-                  handleLogin={(creds, onSuccess) => {
-                    handleLogin(creds, onLoginSuccess);
-                  }}
+                  handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
                   onClose={closeModal}
                 />
               } />
