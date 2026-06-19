@@ -12,12 +12,12 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import RegisterModal from './components/RegisterModal';
 import LoginModalContent from './components/LoginModalContent';
-import AdminPanel from './components/AdminPanel';
 
 // Pages
 import HomePage from './pages/HomePage';
 import BlogPage from './components/BlogPage';
 import AboutPage from './pages/AboutPage';
+import AdminPanel from './pages/admin/AdminPanel';
 import PostDetail from './components/PostDetail';
 import EditPost from './components/EditPost';
 import AnalyticsPage from './components/AnalyticsPage';
@@ -30,8 +30,9 @@ import AdminSchedulerSettings from './pages/admin/AdminSchedulerSettings';
 // Hooks & Utils
 import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
-import API_URL from './config';
+import API_URL from './config';   // <-- import config
 
+// Configure axios
 axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
 
@@ -42,21 +43,9 @@ function AppContent() {
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-
-  // ✅ Local state for login modal – opens instantly
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [loginBackground, setLoginBackground] = useState(null);
-
+  
+  const backgroundLocation = location.state?.backgroundLocation;
   const isHomePage = location.pathname === '/';
-
-  // 🔁 Sync URL with modal state (for back button)
-  useEffect(() => {
-    if (isLoginOpen && location.pathname !== '/login') {
-      navigate('/login', { replace: false });
-    } else if (!isLoginOpen && location.pathname === '/login') {
-      navigate(loginBackground?.pathname || '/', { replace: true });
-    }
-  }, [isLoginOpen, location.pathname, loginBackground, navigate]);
 
   // Initial check for zero users
   useEffect(() => {
@@ -95,24 +84,9 @@ function AppContent() {
     fetchAdminData();
   };
 
-  // ✅ Open modal instantly
-  const openLoginModal = () => {
-    setLoginBackground(location);
-    setIsLoginOpen(true);
-  };
-
-  // ✅ Close modal and go back
-  const closeLoginModal = () => {
-    setIsLoginOpen(false);
-    setLoginCreds({ identifier: '', password: '' });
-    navigate(loginBackground?.pathname || '/', { replace: true });
-  };
-
-  // ✅ After login success
   const onLoginSuccess = () => {
     setLoginCreds({ identifier: '', password: '' });
-    setIsLoginOpen(false);
-    navigate(loginBackground?.pathname || '/', { replace: true });
+    navigate(-1);
   };
 
   if (loading || !initialCheckDone) {
@@ -128,23 +102,21 @@ function AppContent() {
   return (
     <div className={isHomePage ? "homepage-container" : "app-container"}>
       <Toaster position="top-right" />
-
+      
       {isHomePage && (
         <div className="fullscreen-bg" style={{ backgroundImage: `url(${API_URL}/static/index.jpg)` }}></div>
       )}
 
       <div className="d-flex flex-column min-vh-100">
-        <Navbar
+        <Navbar 
           isLoggedIn={isLoggedIn}
           adminData={adminData}
           setShowRegister={setShowRegister}
           handleLogout={handleLogout}
-          openLoginModal={openLoginModal}
         />
 
         <main className="container" style={{ paddingBottom: '20px', paddingTop: '40px' }}>
-          {/* ========== ALL ROUTES ========== */}
-          <Routes>
+          <Routes location={backgroundLocation || location}>
             <Route path="/" element={<HomePage adminData={adminData} />} />
             <Route path="/blog" element={<BlogPage isLoggedIn={isLoggedIn} />} />
             <Route path="/category/:categorySlug" element={<BlogPage isLoggedIn={isLoggedIn} />} />
@@ -157,36 +129,37 @@ function AppContent() {
             <Route path="/admin/analytics" element={isLoggedIn && adminData?.is_super_admin ? <AnalyticsPage isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
             <Route path="/admin/security" element={isLoggedIn && adminData?.is_super_admin ? <SecurityDashboard isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
             <Route path="/admin/scheduler" element={
-              isLoggedIn && adminData?.is_super_admin ?
-                <AdminSchedulerSettings /> :
-                <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>
+              isLoggedIn && adminData?.is_super_admin ? 
+              <AdminSchedulerSettings /> : 
+              <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>
             } />
             <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} adminData={adminData} onUpdate={fetchAdminData} />} />
             <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
-            {/* 👇 Dummy route to silence "No routes matched location '/login'" */}
-            <Route path="/login" element={null} />
           </Routes>
-
-          {/* ========== LOGIN MODAL (conditional, opens instantly) ========== */}
-          {isLoginOpen && (
-            <LoginModalContent
-              loginCreds={loginCreds}
-              setLoginCreds={setLoginCreds}
-              handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
-              onClose={closeLoginModal}
-            />
+          
+          {/* Modal Routes */}
+          {backgroundLocation && (
+            <Routes>
+              <Route path="/login" element={
+                <LoginModalContent 
+                  loginCreds={loginCreds}
+                  setLoginCreds={setLoginCreds}
+                  handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
+                  onClose={() => navigate(-1)}
+                />
+              } />
+            </Routes>
           )}
         </main>
 
-        <Footer
+        <Footer 
           isLoggedIn={isLoggedIn}
           adminData={adminData}
           handleLogout={handleLogout}
-          openLoginModal={openLoginModal}
         />
       </div>
 
-      <RegisterModal
+      <RegisterModal 
         showRegister={showRegister}
         setShowRegister={setShowRegister}
         onRegisterSuccess={handleRegisterSuccess}
