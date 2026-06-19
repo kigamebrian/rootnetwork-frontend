@@ -155,6 +155,26 @@ function HomePage() {
           background-color: #07255b !important;
           color: white !important;
         }
+        /* ---- Lazy loading & shimmer ---- */
+        .lazy-image {
+          opacity: 0;
+          animation: fadeIn 0.6s ease-in forwards;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.98); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .lazy-image:not([loaded]) {
+          background: #f0f0f0;
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite, fadeIn 0.6s ease-in forwards;
+        }
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        /* ---- Responsive ---- */
         @media (max-width: 768px) {
           .hero-card {
             height: 300px !important;
@@ -173,7 +193,8 @@ function HomePage() {
                     <img
                       src={getImageUrl(post.image) || "https://placehold.co/800x600/1a1a2e/white?text=News"}
                       alt={post.title}
-                      className="w-100 h-100"
+                      className="w-100 h-100 lazy-image"
+                      loading="lazy"
                       style={{ objectFit: 'cover' }}
                     />
                     <div className="hero-overlay position-absolute bottom-0 start-0 end-0 p-4 text-white"
@@ -208,8 +229,9 @@ function HomePage() {
                       {post.image && (
                         <img
                           src={getImageUrl(post.image)}
-                          className="card-img-top"
+                          className="card-img-top lazy-image"
                           alt={post.title}
+                          loading="lazy"
                           style={{ height: '220px', objectFit: 'cover' }}
                         />
                       )}
@@ -247,8 +269,9 @@ function HomePage() {
                         {post.image && (
                           <img
                             src={getImageUrl(post.image)}
-                            className="w-100 rounded mb-2"
+                            className="w-100 rounded mb-2 lazy-image"
                             alt={post.title}
+                            loading="lazy"
                             style={{ height: '120px', objectFit: 'cover' }}
                           />
                         )}
@@ -275,8 +298,9 @@ function HomePage() {
                         {post.image && (
                           <img
                             src={getImageUrl(post.image)}
-                            className="w-100 rounded mb-2"
+                            className="w-100 rounded mb-2 lazy-image"
                             alt={post.title}
+                            loading="lazy"
                             style={{ height: '120px', objectFit: 'cover' }}
                           />
                         )}
@@ -303,8 +327,9 @@ function HomePage() {
                         {post.image && (
                           <img
                             src={getImageUrl(post.image)}
-                            className="w-100 rounded mb-2"
+                            className="w-100 rounded mb-2 lazy-image"
                             alt={post.title}
+                            loading="lazy"
                             style={{ height: '120px', objectFit: 'cover' }}
                           />
                         )}
