@@ -12,7 +12,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import RegisterModal from './components/RegisterModal';
 import LoginModalContent from './components/LoginModalContent';
-import AdminPanel from './components/AdminPanel';   // <-- import AdminPanel (not from pages)
+import AdminPanel from './components/AdminPanel';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -30,9 +30,8 @@ import AdminSchedulerSettings from './pages/admin/AdminSchedulerSettings';
 // Hooks & Utils
 import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
-import API_URL from './config';   // <-- import config
+import API_URL from './config';
 
-// Configure axios – use environment variable
 axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
 
@@ -44,15 +43,20 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const backgroundLocation = location.state?.backgroundLocation;
+  // ✅ NEW: local state for login modal – opens instantly
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [loginBackground, setLoginBackground] = useState(null); // store the page we came from
+
   const isHomePage = location.pathname === '/';
 
-  // ⚠️ Redirect direct /login visits (without background) to home
+  // 🔁 Sync URL with modal state (for back button)
   useEffect(() => {
-    if (location.pathname === '/login' && !backgroundLocation) {
-      navigate('/', { replace: true });
+    if (isLoginOpen && location.pathname !== '/login') {
+      navigate('/login', { replace: false });
+    } else if (!isLoginOpen && location.pathname === '/login') {
+      navigate(loginBackground?.pathname || '/', { replace: true });
     }
-  }, [location.pathname, backgroundLocation, navigate]);
+  }, [isLoginOpen, location.pathname, loginBackground, navigate]);
 
   // Initial check for zero users
   useEffect(() => {
@@ -91,20 +95,24 @@ function AppContent() {
     fetchAdminData();
   };
 
-  // ✅ Close modal and return to the background page
-  const closeModal = () => {
-    setLoginCreds({ identifier: '', password: '' });
-    // Navigate back to the background page, clearing the state
-    const targetPath = backgroundLocation?.pathname || '/';
-    navigate(targetPath, { replace: true, state: {} });
+  // ✅ Open modal instantly (no router delay)
+  const openLoginModal = () => {
+    setLoginBackground(location);
+    setIsLoginOpen(true);
   };
 
-  // ✅ Login success handler
+  // ✅ Close modal and go back to background
+  const closeLoginModal = () => {
+    setIsLoginOpen(false);
+    setLoginCreds({ identifier: '', password: '' });
+    navigate(loginBackground?.pathname || '/', { replace: true });
+  };
+
+  // ✅ After login success
   const onLoginSuccess = () => {
     setLoginCreds({ identifier: '', password: '' });
-    const targetPath = backgroundLocation?.pathname || '/';
-    // Clear background state so modal closes
-    navigate(targetPath, { replace: true, state: {} });
+    setIsLoginOpen(false);
+    navigate(loginBackground?.pathname || '/', { replace: true });
   };
 
   if (loading || !initialCheckDone) {
@@ -131,11 +139,12 @@ function AppContent() {
           adminData={adminData}
           setShowRegister={setShowRegister}
           handleLogout={handleLogout}
+          openLoginModal={openLoginModal}   // ← pass this down
         />
 
         <main className="container" style={{ paddingBottom: '20px', paddingTop: '40px' }}>
-          {/* ========== MAIN ROUTES (background content) ========== */}
-          <Routes location={backgroundLocation || location}>
+          {/* ========== ALL ROUTES (no backgroundLocation needed anymore) ========== */}
+          <Routes>
             <Route path="/" element={<HomePage adminData={adminData} />} />
             <Route path="/blog" element={<BlogPage isLoggedIn={isLoggedIn} />} />
             <Route path="/category/:categorySlug" element={<BlogPage isLoggedIn={isLoggedIn} />} />
@@ -156,18 +165,14 @@ function AppContent() {
             <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
           </Routes>
 
-          {/* ========== MODAL OVERLAY ========== */}
-          {backgroundLocation && (
-            <Routes location={backgroundLocation}>
-              <Route path="/login" element={
-                <LoginModalContent
-                  loginCreds={loginCreds}
-                  setLoginCreds={setLoginCreds}
-                  handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
-                  onClose={closeModal}
-                />
-              } />
-            </Routes>
+          {/* ========== LOGIN MODAL (rendered conditionally, no routing delay) ========== */}
+          {isLoginOpen && (
+            <LoginModalContent
+              loginCreds={loginCreds}
+              setLoginCreds={setLoginCreds}
+              handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
+              onClose={closeLoginModal}
+            />
           )}
         </main>
 
@@ -175,6 +180,7 @@ function AppContent() {
           isLoggedIn={isLoggedIn}
           adminData={adminData}
           handleLogout={handleLogout}
+          openLoginModal={openLoginModal}   // ← pass this down
         />
       </div>
 
