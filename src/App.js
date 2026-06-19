@@ -32,7 +32,6 @@ import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
 import API_URL from './config';
 
-// Configure axios
 axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
 
@@ -44,16 +43,32 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Resilient background detection
-  const backgroundLocation = location.state?.backgroundLocation || location.state?.background;
+  // ✅ Stable background location – captured once and persisted
+  const [backgroundLocation, setBackgroundLocation] = useState(
+    location.state?.backgroundLocation || location.state?.background
+  );
+
+  // Update background when location changes (e.g., user clicks login)
+  useEffect(() => {
+    const bg = location.state?.backgroundLocation || location.state?.background;
+    if (bg) {
+      setBackgroundLocation(bg);
+    }
+  }, [location.state]);
+
   const isHomePage = location.pathname === '/';
   const isLoginRoute = location.pathname === '/login';
 
-  // NO REDIRECT – we handle /login with full-page fallback
-
-  // Initial check for zero users (only on root, not on /login or /setup)
+  // 🔁 Redirect direct /login visits (without background) to home
   useEffect(() => {
-    if (isLoginRoute) return; // let login route handle itself
+    if (isLoginRoute && !backgroundLocation) {
+      navigate('/', { replace: true });
+    }
+  }, [isLoginRoute, backgroundLocation, navigate]);
+
+  // Initial check for zero users
+  useEffect(() => {
+    if (isLoginRoute) return;
     const checkInitialUserStatus = async () => {
       try {
         const response = await axios.get('/api/check-registration-status');
@@ -89,14 +104,12 @@ function AppContent() {
     fetchAdminData();
   };
 
-  // Close modal: go back to the page we came from
+  // ✅ Close modal: clear background and navigate back
   const closeModal = () => {
     setLoginCreds({ identifier: '', password: '' });
-    if (backgroundLocation) {
-      navigate(backgroundLocation.pathname);
-    } else {
-      navigate(-1);
-    }
+    const targetPath = backgroundLocation?.pathname || '/';
+    setBackgroundLocation(null); // prevent modal from reappearing
+    navigate(targetPath, { replace: true });
   };
 
   if (loading || !initialCheckDone) {
@@ -148,32 +161,23 @@ function AppContent() {
             <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
           </Routes>
 
-          {/* ========== MODAL OVERLAY (when background exists) ========== */}
+          {/* ========== MODAL OVERLAY (only when background exists) ========== */}
           {backgroundLocation && (
             <Routes location={backgroundLocation}>
               <Route path="/login" element={
                 <LoginModalContent
                   loginCreds={loginCreds}
                   setLoginCreds={setLoginCreds}
-                  handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
+                  handleLogin={(creds, onSuccess) => {
+                    handleLogin(creds, () => {
+                      setLoginCreds({ identifier: '', password: '' });
+                      navigate(backgroundLocation.pathname, { replace: true });
+                    });
+                  }}
                   onClose={closeModal}
                 />
               } />
             </Routes>
-          )}
-
-          {/* ========== STANDALONE LOGIN PAGE (fallback) ========== */}
-          {!backgroundLocation && isLoginRoute && (
-            <div className="row justify-content-center">
-              <div className="col-md-6 col-lg-5">
-                <LoginModalContent
-                  loginCreds={loginCreds}
-                  setLoginCreds={setLoginCreds}
-                  handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
-                  onClose={() => navigate('/')}
-                />
-              </div>
-            </div>
           )}
         </main>
 
