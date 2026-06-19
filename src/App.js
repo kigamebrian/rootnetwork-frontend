@@ -32,7 +32,6 @@ import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
 import API_URL from './config';
 
-// Configure axios
 axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
 
@@ -43,11 +42,11 @@ function AppContent() {
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const backgroundLocation = location.state?.backgroundLocation;
   const isHomePage = location.pathname === '/';
 
-  // Redirect direct /login visits (without background) to home
+  // 🔁 Redirect direct /login visits (without background) to home
   useEffect(() => {
     if (location.pathname === '/login' && !backgroundLocation) {
       navigate('/', { replace: true });
@@ -91,7 +90,7 @@ function AppContent() {
     fetchAdminData();
   };
 
-  // ========== FIX: navigate to the background page after login/cancel ==========
+  // ✅ Close modal and return to the background page
   const closeModal = () => {
     setLoginCreds({ identifier: '', password: '' });
     if (backgroundLocation) {
@@ -114,13 +113,13 @@ function AppContent() {
   return (
     <div className={isHomePage ? "homepage-container" : "app-container"}>
       <Toaster position="top-right" />
-      
+
       {isHomePage && (
         <div className="fullscreen-bg" style={{ backgroundImage: `url(${API_URL}/static/index.jpg)` }}></div>
       )}
 
       <div className="d-flex flex-column min-vh-100">
-        <Navbar 
+        <Navbar
           isLoggedIn={isLoggedIn}
           adminData={adminData}
           setShowRegister={setShowRegister}
@@ -128,21 +127,7 @@ function AppContent() {
         />
 
         <main className="container" style={{ paddingBottom: '20px', paddingTop: '40px' }}>
-          {/* ========== ADMIN ROUTES (always use current location) ========== */}
-          <Routes>
-            <Route path="/admin/edit/:slug" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
-            <Route path="/admin/create" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
-            <Route path="/admin" element={isLoggedIn ? <AdminPanel isSuperAdmin={adminData?.is_super_admin} currentUserId={adminData?.id} /> : <div className="alert alert-warning">Please login first</div>} />
-            <Route path="/admin/analytics" element={isLoggedIn && adminData?.is_super_admin ? <AnalyticsPage isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
-            <Route path="/admin/security" element={isLoggedIn && adminData?.is_super_admin ? <SecurityDashboard isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
-            <Route path="/admin/scheduler" element={
-              isLoggedIn && adminData?.is_super_admin ? 
-              <AdminSchedulerSettings /> : 
-              <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>
-            } />
-          </Routes>
-
-          {/* ========== PUBLIC ROUTES (with background support for modals) ========== */}
+          {/* ========== MAIN ROUTES (background content) ========== */}
           <Routes location={backgroundLocation || location}>
             <Route path="/" element={<HomePage adminData={adminData} />} />
             <Route path="/blog" element={<BlogPage isLoggedIn={isLoggedIn} />} />
@@ -150,15 +135,25 @@ function AppContent() {
             <Route path="/blog/post/:slug" element={<PostDetail isLoggedIn={isLoggedIn} adminData={adminData} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
             <Route path="/about" element={<AboutPage adminData={adminData} />} />
             <Route path="/setup" element={<SetupRoute setShowRegister={setShowRegister} isLoggedIn={isLoggedIn} adminData={adminData} />} />
+            <Route path="/admin/edit/:slug" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
+            <Route path="/admin/create" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
+            <Route path="/admin" element={isLoggedIn ? <AdminPanel isSuperAdmin={adminData?.is_super_admin} currentUserId={adminData?.id} /> : <div className="alert alert-warning">Please login first</div>} />
+            <Route path="/admin/analytics" element={isLoggedIn && adminData?.is_super_admin ? <AnalyticsPage isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
+            <Route path="/admin/security" element={isLoggedIn && adminData?.is_super_admin ? <SecurityDashboard isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
+            <Route path="/admin/scheduler" element={
+              isLoggedIn && adminData?.is_super_admin ?
+                <AdminSchedulerSettings /> :
+                <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>
+            } />
             <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} adminData={adminData} onUpdate={fetchAdminData} />} />
             <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
           </Routes>
-          
+
           {/* ========== MODAL OVERLAY ========== */}
           {backgroundLocation && (
             <Routes location={backgroundLocation}>
               <Route path="/login" element={
-                <LoginModalContent 
+                <LoginModalContent
                   loginCreds={loginCreds}
                   setLoginCreds={setLoginCreds}
                   handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
@@ -169,14 +164,14 @@ function AppContent() {
           )}
         </main>
 
-        <Footer 
+        <Footer
           isLoggedIn={isLoggedIn}
           adminData={adminData}
           handleLogout={handleLogout}
         />
       </div>
 
-      <RegisterModal 
+      <RegisterModal
         showRegister={showRegister}
         setShowRegister={setShowRegister}
         onRegisterSuccess={handleRegisterSuccess}
