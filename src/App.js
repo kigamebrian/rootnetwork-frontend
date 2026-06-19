@@ -26,6 +26,7 @@ import Profile from './components/Profile';
 import SetupRoute from './pages/SetupRoute';
 import VerifySubscription from './pages/VerifySubscription';
 import AdminSchedulerSettings from './pages/admin/AdminSchedulerSettings';
+import NotFound from './pages/NotFound';
 
 // Hooks & Utils
 import { useAuth } from './hooks/useAuth';
@@ -143,6 +144,7 @@ function AppContent() {
             } />
             <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} adminData={adminData} onUpdate={fetchAdminData} />} />
             <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
 
           {/* ========== MODAL OVERLAY (only when backgroundLocation exists) ========== */}
