@@ -148,7 +148,6 @@ function ShareButton({ title, url, image, description }) {
 
 // ---- Custom image component for ReactMarkdown with lazy loading ----
 const MarkdownImage = ({ src, alt, ...props }) => {
-  // If the image path is relative, prepend API_URL
   const imageUrl = src && src.startsWith('http') ? src : `${API_URL}${src}`;
   return <img src={imageUrl} alt={alt || ''} loading="lazy" className="img-fluid rounded-3 my-3" {...props} />;
 };
@@ -156,9 +155,88 @@ const MarkdownImage = ({ src, alt, ...props }) => {
 // ---- Custom HTML image lazy loading (for dangerouslySetInnerHTML) ----
 const addLazyLoadingToHtml = (html) => {
   if (!html) return html;
-  // Add loading="lazy" to all img tags that don't already have it
   return html.replace(/<img /g, '<img loading="lazy" ');
 };
+
+// ---- Skeleton / Shimmer Loading Component ----
+const PostDetailSkeleton = () => (
+  <div className="skeleton-wrapper" role="status" aria-label="Loading post content">
+    <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div className="card-body p-4 p-lg-5">
+        {/* Category badge skeleton */}
+        <div className="skeleton skeleton-badge mb-3" style={{ width: '120px', height: '32px', borderRadius: '50px' }}></div>
+
+        {/* Title skeleton */}
+        <div className="skeleton skeleton-text mb-3" style={{ width: '80%', height: '40px' }}></div>
+        <div className="skeleton skeleton-text mb-4" style={{ width: '60%', height: '40px' }}></div>
+
+        {/* Author & date skeleton */}
+        <div className="d-flex align-items-center gap-3 border-bottom pb-3 mb-4">
+          <div className="skeleton skeleton-circle" style={{ width: '48px', height: '48px' }}></div>
+          <div>
+            <div className="skeleton skeleton-text" style={{ width: '150px', height: '20px' }}></div>
+            <div className="skeleton skeleton-text" style={{ width: '100px', height: '16px', marginTop: '6px' }}></div>
+          </div>
+        </div>
+
+        {/* Featured image skeleton */}
+        <div className="skeleton skeleton-image mb-4" style={{ height: '300px', borderRadius: '16px' }}></div>
+
+        {/* Content paragraphs skeleton */}
+        <div className="skeleton skeleton-text" style={{ width: '100%', height: '20px' }}></div>
+        <div className="skeleton skeleton-text" style={{ width: '95%', height: '20px', marginTop: '12px' }}></div>
+        <div className="skeleton skeleton-text" style={{ width: '98%', height: '20px', marginTop: '12px' }}></div>
+        <div className="skeleton skeleton-text" style={{ width: '90%', height: '20px', marginTop: '12px' }}></div>
+        <div className="skeleton skeleton-text" style={{ width: '85%', height: '20px', marginTop: '12px' }}></div>
+        <div className="skeleton skeleton-text" style={{ width: '92%', height: '20px', marginTop: '12px' }}></div>
+      </div>
+    </div>
+
+    <style>{`
+      .skeleton-wrapper {
+        animation: skeleton-fade-in 0.3s ease;
+      }
+      .skeleton {
+        background: #e9ecef;
+        background-image: linear-gradient(
+          90deg,
+          #e9ecef 0%,
+          #f8f9fa 20%,
+          #e9ecef 40%,
+          #e9ecef 100%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+        display: block;
+      }
+      .skeleton-badge {
+        border-radius: 50px !important;
+      }
+      .skeleton-circle {
+        border-radius: 50% !important;
+      }
+      .skeleton-image {
+        border-radius: 16px !important;
+      }
+      .skeleton-text {
+        border-radius: 4px;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: -200% 0;
+        }
+        100% {
+          background-position: 200% 0;
+        }
+      }
+      @keyframes skeleton-fade-in {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+      }
+    `}</style>
+  </div>
+);
 
 // ---- Main Component ----
 function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
@@ -276,14 +354,9 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
     });
   };
 
+  // ---- Loading state: show shimmer skeleton ----
   if (loading) {
-    return (
-      <div className="text-center py-5">
-        <div className="spinner-border" style={{ color: '#07255b' }} role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
+    return <PostDetailSkeleton />;
   }
 
   if (!post) return <div className="alert alert-danger">Post not found</div>;
@@ -375,7 +448,7 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
         </script>
       </Helmet>
 
-      <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden fade-in-content">
         <div className="card-body p-4 p-lg-5">
           {post.category && (
             <div className="mb-3">
@@ -576,6 +649,15 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
       </div>
 
       <style>{`
+        /* ---- Fade-in animation for content ---- */
+        .fade-in-content {
+          animation: contentFadeIn 0.6s ease;
+        }
+        @keyframes contentFadeIn {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+
         .share-button-container { position: relative; display: inline-block; }
         .share-dropdown {
           position: absolute; top: 100%; right: 0; left: auto; margin-top: 8px;
