@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-import API_URL from '../config';   // <-- import config
+import API_URL from '../config';
 
 function BlogPage({ isLoggedIn }) {
   const navigate = useNavigate();
@@ -19,16 +19,13 @@ function BlogPage({ isLoggedIn }) {
   const [totalPosts, setTotalPosts] = useState(0);
   const [postsPerPage] = useState(6);
 
-  // Set document title based on selected category
   const pageTitle = selectedCategoryName ? `${selectedCategoryName} News` : 'Latest News';
   useDocumentTitle(pageTitle, 'RootNetwork');
 
-  // Load categories first, then set selected category from URL
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // When categories load or categorySlug changes, set selected category
   useEffect(() => {
     if (categories.length > 0 && categorySlug) {
       const categoryName = categorySlug.split('-').map(word => 
@@ -53,12 +50,10 @@ function BlogPage({ isLoggedIn }) {
     }
   }, [categories, categorySlug]);
 
-  // Fetch posts when category or page changes
   useEffect(() => {
     fetchPosts();
   }, [selectedCategory, currentPage]);
 
-  // Fetch featured post (only when no category is selected)
   useEffect(() => {
     if (!selectedCategory) {
       fetchFeaturedPost();
@@ -188,15 +183,20 @@ function BlogPage({ isLoggedIn }) {
 
   return (
     <div className="container py-5">
-      {/* Featured Post - Shows only when no category is selected */}
+      {/* Featured Post */}
       {featuredPost && !selectedCategory && (
         <div className="row g-5 border-bottom pb-5 mb-5">
           <div className="col-md-6 mb-4">
-            <div className="card overflow-hidden border-0 shadow rounded-4" style={{ cursor: 'pointer' }} onClick={() => handlePostClick(featuredPost.slug)}>
+            <div 
+              className="card overflow-hidden border-0 shadow rounded-4" 
+              style={{ cursor: 'pointer' }} 
+              onClick={() => handlePostClick(featuredPost.slug)}
+            >
               <img
                 src={getImageUrl(featuredPost.image) || "https://mdbcdn.b-cdn.net/img/new/slides/080.webp"}
-                className="card-img-top"
+                className="card-img-top lazy-image"
                 alt={featuredPost.title}
+                loading="lazy"
                 style={{ height: '300px', objectFit: 'cover' }}
                 onError={(e) => {
                   e.target.src = "https://mdbcdn.b-cdn.net/img/new/slides/080.webp";
@@ -229,7 +229,6 @@ function BlogPage({ isLoggedIn }) {
         </div>
       )}
 
-      {/* Show message when category is selected */}
       {selectedCategoryName && (
         <div className="alert alert-info mb-4">
           <i className="fas fa-filter me-2"></i>
@@ -244,7 +243,6 @@ function BlogPage({ isLoggedIn }) {
       )}
 
       <div className="row g-5">
-        {/* Main Content */}
         <div className="col-lg-8">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h3 className="fw-bold" style={{ color: '#07255b' }}>
@@ -273,14 +271,19 @@ function BlogPage({ isLoggedIn }) {
               {posts.map((post, index) => (
                 <div className="col-md-6 mb-4" key={post.id}>
                   <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                    <div className="card-img-top overflow-hidden" style={{ height: '200px', cursor: 'pointer' }} onClick={() => handlePostClick(post.slug)}>
+                    <div 
+                      className="card-img-top overflow-hidden" 
+                      style={{ height: '200px', cursor: 'pointer' }} 
+                      onClick={() => handlePostClick(post.slug)}
+                    >
                       <img
                         src={getImageUrl(post.image) || (index % 2 === 0 
                           ? "https://mdbcdn.b-cdn.net/img/new/standard/city/041.webp"
                           : "https://mdbcdn.b-cdn.net/img/new/standard/city/042.webp")}
-                        className="w-100 h-100"
+                        className="w-100 h-100 lazy-image"
                         style={{ objectFit: 'cover' }}
                         alt={post.title}
+                        loading="lazy"
                         onError={(e) => {
                           e.target.src = index % 2 === 0 
                             ? "https://mdbcdn.b-cdn.net/img/new/standard/city/041.webp"
@@ -316,7 +319,6 @@ function BlogPage({ isLoggedIn }) {
             </div>
           )}
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <nav className="mt-5" aria-label="Blog pagination">
               <ul className="pagination justify-content-center">
@@ -394,9 +396,7 @@ function BlogPage({ isLoggedIn }) {
           )}
         </div>
 
-        {/* Sidebar */}
         <div className="col-lg-4">
-          {/* Categories */}
           <div className="card border-0 shadow-sm rounded-4 mb-4">
             <div className="card-body">
               <h5 className="fw-bold mb-3" style={{ color: '#07255b' }}>
@@ -427,7 +427,6 @@ function BlogPage({ isLoggedIn }) {
             </div>
           </div>
 
-          {/* Recent Posts */}
           <div className="card border-0 shadow-sm rounded-4 mb-4">
             <div className="card-body">
               <h5 className="fw-bold mb-3" style={{ color: '#07255b' }}>
@@ -440,9 +439,10 @@ function BlogPage({ isLoggedIn }) {
                     src={getImageUrl(post.image) || (idx === 0 
                       ? "https://mdbcdn.b-cdn.net/img/new/standard/city/031.webp"
                       : "https://mdbcdn.b-cdn.net/img/new/standard/city/032.webp")}
-                    className="rounded me-3"
+                    className="rounded me-3 lazy-image"
                     style={{ width: '60px', height: '60px', objectFit: 'cover' }}
                     alt={post.title}
+                    loading="lazy"
                     onError={(e) => {
                       e.target.src = idx === 0 
                         ? "https://mdbcdn.b-cdn.net/img/new/standard/city/031.webp"
@@ -462,6 +462,32 @@ function BlogPage({ isLoggedIn }) {
           </div>
         </div>
       </div>
+
+      {/* CSS for lazy loading fade-in effect */}
+      <style>{`
+        .lazy-image {
+          opacity: 0;
+          animation: fadeIn 0.6s ease-in forwards;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.98); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Optional: skeleton shimmer while loading – can be added if desired */
+        .lazy-image:not([loaded]) {
+          background: #f0f0f0;
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite, fadeIn 0.6s ease-in forwards;
+        }
+
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </div>
   );
 }
