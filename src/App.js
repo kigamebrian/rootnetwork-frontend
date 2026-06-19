@@ -32,7 +32,6 @@ import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
 import API_URL from './config';
 
-// Configure axios
 axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
 
@@ -44,11 +43,10 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // backgroundLocation is set when navigating to /login with state
   const backgroundLocation = location.state?.backgroundLocation;
   const isHomePage = location.pathname === '/';
 
-  // If user visits /login without backgroundLocation, redirect to home
+  // Redirect direct /login visits (without background state) to home
   useEffect(() => {
     if (location.pathname === '/login' && !backgroundLocation) {
       navigate('/', { replace: true });
@@ -94,7 +92,7 @@ function AppContent() {
 
   const onLoginSuccess = () => {
     setLoginCreds({ identifier: '', password: '' });
-    navigate(-1);
+    navigate(-1); // go back to the page we were on
   };
 
   if (loading || !initialCheckDone) {
