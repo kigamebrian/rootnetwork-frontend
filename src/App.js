@@ -43,9 +43,9 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ✅ NEW: local state for login modal – opens instantly
+  // ✅ Local state for login modal – opens instantly
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [loginBackground, setLoginBackground] = useState(null); // store the page we came from
+  const [loginBackground, setLoginBackground] = useState(null);
 
   const isHomePage = location.pathname === '/';
 
@@ -95,13 +95,13 @@ function AppContent() {
     fetchAdminData();
   };
 
-  // ✅ Open modal instantly (no router delay)
+  // ✅ Open modal instantly
   const openLoginModal = () => {
     setLoginBackground(location);
     setIsLoginOpen(true);
   };
 
-  // ✅ Close modal and go back to background
+  // ✅ Close modal and go back
   const closeLoginModal = () => {
     setIsLoginOpen(false);
     setLoginCreds({ identifier: '', password: '' });
@@ -139,11 +139,11 @@ function AppContent() {
           adminData={adminData}
           setShowRegister={setShowRegister}
           handleLogout={handleLogout}
-          openLoginModal={openLoginModal}   // ← pass this down
+          openLoginModal={openLoginModal}
         />
 
         <main className="container" style={{ paddingBottom: '20px', paddingTop: '40px' }}>
-          {/* ========== ALL ROUTES (no backgroundLocation needed anymore) ========== */}
+          {/* ========== ALL ROUTES ========== */}
           <Routes>
             <Route path="/" element={<HomePage adminData={adminData} />} />
             <Route path="/blog" element={<BlogPage isLoggedIn={isLoggedIn} />} />
@@ -163,9 +163,11 @@ function AppContent() {
             } />
             <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} adminData={adminData} onUpdate={fetchAdminData} />} />
             <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
+            {/* 👇 Dummy route to silence "No routes matched location '/login'" */}
+            <Route path="/login" element={null} />
           </Routes>
 
-          {/* ========== LOGIN MODAL (rendered conditionally, no routing delay) ========== */}
+          {/* ========== LOGIN MODAL (conditional, opens instantly) ========== */}
           {isLoginOpen && (
             <LoginModalContent
               loginCreds={loginCreds}
@@ -180,7 +182,7 @@ function AppContent() {
           isLoggedIn={isLoggedIn}
           adminData={adminData}
           handleLogout={handleLogout}
-          openLoginModal={openLoginModal}   // ← pass this down
+          openLoginModal={openLoginModal}
         />
       </div>
 
