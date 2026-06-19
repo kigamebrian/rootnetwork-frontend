@@ -9,7 +9,7 @@ import { Helmet } from 'react-helmet-async';
 import tracking from '../utils/tracking';
 import RelatedPosts from './RelatedPosts';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-import API_URL from '../config';   // <-- import config
+import API_URL from '../config';
 
 // ---- Audio Player Component (themed) ----
 function AudioPlayer({ content, title }) {
@@ -250,7 +250,7 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
 
   const getAuthorImage = (profileImage) => {
     if (!profileImage || profileImage === 'default-avatar.png') return null;
-    if (profileImage.startsWith('http')) return profileImage;   // Cloudinary or external
+    if (profileImage.startsWith('http')) return profileImage;
     return `${API_URL}/static/${profileImage}`;
   };
 
@@ -301,183 +301,180 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
         {post.category && <meta property="article:section" content={post.category.name} />}
       </Helmet>
 
-        <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
-          <div className="card-body p-4 p-lg-5">
-            {post.category && (
-              <div className="mb-3">
-                <span className="badge px-3 py-2 rounded-pill" style={{ backgroundColor: '#07255b' }}>
-                  <i className="fas fa-folder me-1"></i> {post.category.name}
-                </span>
-              </div>
-            )}
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div className="card-body p-4 p-lg-5">
+          {post.category && (
+            <div className="mb-3">
+              <span className="badge px-3 py-2 rounded-pill" style={{ backgroundColor: '#07255b' }}>
+                <i className="fas fa-folder me-1"></i> {post.category.name}
+              </span>
+            </div>
+          )}
 
-            <h1 className="fw-bold display-5 mb-4">{post.title}</h1>
+          <h1 className="fw-bold display-5 mb-4">{post.title}</h1>
 
-            <div className="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
-              <div className="d-flex align-items-center gap-3">
-                <div className="flex-shrink-0">
-                  {getAuthorImage(post.author?.profile_image) ? (
-                    <img src={getAuthorImage(post.author?.profile_image)} alt={post.author?.full_name || post.author?.username} className="rounded-circle" width="48" height="48" style={{ objectFit: 'cover', border: '2px solid #e9ecef' }} />
-                  ) : (
-                    <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
-                      <i className="fas fa-user text-white fa-lg"></i>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div className="fw-bold">
-                    {post.author?.full_name || post.author?.username || 'Unknown Author'}
-                    {post.author?.is_super_admin && <span className="badge ms-2" style={{ backgroundColor: '#07255b', fontSize: '10px' }}>Admin</span>}
+          <div className="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+            <div className="d-flex align-items-center gap-3">
+              <div className="flex-shrink-0">
+                {getAuthorImage(post.author?.profile_image) ? (
+                  <img src={getAuthorImage(post.author?.profile_image)} alt={post.author?.full_name || post.author?.username} className="rounded-circle" width="48" height="48" style={{ objectFit: 'cover', border: '2px solid #e9ecef' }} />
+                ) : (
+                  <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
+                    <i className="fas fa-user text-white fa-lg"></i>
                   </div>
-                  <div className="text-muted small">
-                    <i className="far fa-calendar-alt me-1"></i> {formatDate(post.timestamp)}
-                    <span className="mx-2">•</span>
-                    <i className="far fa-clock me-1"></i> {readingTime} read
-                  </div>
-                </div>
+                )}
               </div>
-              <div className="mt-2 mt-sm-0">
-                <ShareButton title={post.title} url={window.location.href} image={getImageUrl(post.image)} description={metaDescription} />
+              <div>
+                <div className="fw-bold">
+                  {post.author?.full_name || post.author?.username || 'Unknown Author'}
+                  {post.author?.is_super_admin && <span className="badge ms-2" style={{ backgroundColor: '#07255b', fontSize: '10px' }}>Admin</span>}
+                </div>
+                <div className="text-muted small">
+                  <i className="far fa-calendar-alt me-1"></i> {formatDate(post.timestamp)}
+                  <span className="mx-2">•</span>
+                  <i className="far fa-clock me-1"></i> {readingTime} read
+                </div>
               </div>
             </div>
-
-            {post.image && (
-              <div className="mb-4 text-center">
-                <img src={getImageUrl(post.image)} alt={post.title} className="img-fluid rounded-4 shadow-sm" style={{ maxHeight: '500px', width: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
-              </div>
-            )}
-
-            {post.content && <AudioPlayer content={post.content} title={post.title} />}
-
-            <div className="post-detail-content mt-4">
-              {isHTML(post.content) ? (
-                <div dangerouslySetInnerHTML={{ __html: post.content }} />
-              ) : (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
-              )}
+            <div className="mt-2 mt-sm-0">
+              <ShareButton title={post.title} url={window.location.href} image={getImageUrl(post.image)} description={metaDescription} />
             </div>
           </div>
 
-          <div className="card-footer bg-white border-top-0 pb-4 px-4 px-lg-5">
-            <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-              <div className="d-flex gap-2">
-                <button className="btn btn-outline-secondary btn-sm rounded-pill px-3" onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('Link copied!'); }}>
-                  <i className="fas fa-copy me-1"></i> Copy Link
-                </button>
-              </div>
-              {isLoggedIn && (isSuperAdmin || post.author_id === currentUserId) && (
-                <div className="d-flex gap-2">
-                  <button className="btn btn-sm rounded-pill px-3" style={{ backgroundColor: '#07255b', color: 'white', border: 'none' }} onClick={() => navigate(`/admin/edit/${post.slug}`)}>
-                    <i className="fas fa-edit me-1"></i> Edit
-                  </button>
-                  <button className="btn btn-danger btn-sm rounded-pill px-3" onClick={handleDeletePost}>
-                    <i className="fas fa-trash me-1"></i> Delete
-                  </button>
-                </div>
-              )}
+          {post.image && (
+            <div className="mb-4 text-center">
+              <img src={getImageUrl(post.image)} alt={post.title} className="img-fluid rounded-4 shadow-sm" style={{ maxHeight: '500px', width: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
             </div>
+          )}
+
+          {post.content && <AudioPlayer content={post.content} title={post.title} />}
+
+          <div className="post-detail-content mt-4">
+            {isHTML(post.content) ? (
+              <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            ) : (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+            )}
           </div>
         </div>
 
-        <RelatedPosts postId={post.id} currentPostSlug={post.slug} />
-
-        {/* ====== NewsletterSubscribe REMOVED – it's in the footer ====== */}
-
-        <div className="card mt-4 border-0 shadow-sm rounded-4">
-          <div className="card-body p-4">
-            <h5 className="card-title fw-bold mb-3">
-              <i className="fas fa-comments me-2" style={{ color: '#07255b' }}></i>
-              Comments ({post.comments?.length || 0})
-            </h5>
-            <hr className="mb-4" />
-
-            {post.comments && post.comments.length > 0 ? (
-              post.comments.map(comment => (
-                <div key={comment.id} className="mb-4">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                      <strong>{comment.author}</strong>
-                      {comment.from_admin && <span className="badge ms-2" style={{ backgroundColor: '#07255b' }}>Admin</span>}
-                      <br />
-                      <small className="text-muted">{new Date(comment.timestamp).toLocaleString()}</small>
-                    </div>
-                    {isLoggedIn && replyTo !== comment.id && (
-                      <button className="btn btn-sm btn-link" style={{ color: '#07255b' }} onClick={() => { setReplyTo(comment.id); setCommentData({ ...commentData, author: '', content: '' }); }}>
-                        <i className="fas fa-reply me-1"></i> Reply
-                      </button>
-                    )}
-                  </div>
-                  <div className="comment-content p-3 bg-light rounded-3">
-                    <ReactMarkdown>{comment.content}</ReactMarkdown>
-                  </div>
-                  {comment.replies && comment.replies.map(reply => (
-                    <div key={reply.id} className="mt-3 ms-4 ps-3 border-start border-3" style={{ borderColor: '#07255b !important' }}>
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                          <strong>{reply.author}</strong>
-                          {reply.from_admin && <span className="badge ms-2" style={{ backgroundColor: '#07255b' }}>Admin</span>}
-                          <br />
-                          <small className="text-muted">{new Date(reply.timestamp).toLocaleString()}</small>
-                        </div>
-                      </div>
-                      <div className="comment-content p-2">
-                        <ReactMarkdown>{reply.content}</ReactMarkdown>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))
-            ) : (
-              <p className="text-muted text-center py-4">
-                <i className="fas fa-comment-slash fa-2x mb-2 d-block"></i>
-                No comments yet. Be the first to comment!
-              </p>
-            )}
-
-            <div className="mt-4 pt-3 border-top">
-              <h6 className="mb-3">
-                {replyTo ? `Replying to comment #${replyTo}` : 'Leave a Comment'}
-                {replyTo && (
-                  <button className="btn btn-sm btn-link ms-2" style={{ color: '#07255b' }} onClick={() => setReplyTo(null)}>
-                    Cancel Reply
-                  </button>
-                )}
-              </h6>
-              {!isLoggedIn && (
-                <div className="alert alert-info small">
-                  <i className="fas fa-info-circle me-2"></i>
-                  Your comment will be reviewed by admin before appearing.
-                </div>
-              )}
-              <div className="bg-light p-3 rounded-3">
-                <div className="mb-2">
-                  <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleAIComment} disabled={aiGeneratingComment}>
-                    {aiGeneratingComment ? (
-                      <><span className="spinner-border spinner-border-sm me-1"></span> Generating...</>
-                    ) : (
-                      '🤖 AI Comment'
-                    )}
-                  </button>
-                  <small className="text-muted ms-2">Generate an AI-powered comment</small>
-                </div>
-                <div className="row">
-                  <div className="col-md-6 mb-2">
-                    <input type="text" className="form-control" placeholder="Your Name *"
-                      value={commentData.author} onChange={(e) => setCommentData({...commentData, author: e.target.value})} />
-                  </div>
-                  <div className="col-md-6 mb-2">
-                    <input type="email" className="form-control" placeholder="Your Email"
-                      value={commentData.email} onChange={(e) => setCommentData({...commentData, email: e.target.value})} />
-                  </div>
-                </div>
-                <input type="text" className="form-control mb-2" placeholder="Your Website (optional)"
-                  value={commentData.site} onChange={(e) => setCommentData({...commentData, site: e.target.value})} />
-                <textarea className="form-control mb-2" rows="4" placeholder="Your Comment *"
-                  value={commentData.content} onChange={(e) => setCommentData({...commentData, content: e.target.value})} />
-                <button className="btn rounded-pill px-4" style={{ backgroundColor: '#07255b', color: 'white', border: 'none' }} onClick={handleAddComment}>
-                  <i className="fas fa-paper-plane me-2"></i> Post Comment
+        <div className="card-footer bg-white border-top-0 pb-4 px-4 px-lg-5">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div className="d-flex gap-2">
+              <button className="btn btn-outline-secondary btn-sm rounded-pill px-3" onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('Link copied!'); }}>
+                <i className="fas fa-copy me-1"></i> Copy Link
+              </button>
+            </div>
+            {isLoggedIn && (isSuperAdmin || post.author_id === currentUserId) && (
+              <div className="d-flex gap-2">
+                <button className="btn btn-sm rounded-pill px-3" style={{ backgroundColor: '#07255b', color: 'white', border: 'none' }} onClick={() => navigate(`/admin/edit/${post.slug}`)}>
+                  <i className="fas fa-edit me-1"></i> Edit
+                </button>
+                <button className="btn btn-danger btn-sm rounded-pill px-3" onClick={handleDeletePost}>
+                  <i className="fas fa-trash me-1"></i> Delete
                 </button>
               </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <RelatedPosts postId={post.id} currentPostSlug={post.slug} />
+
+      <div className="card mt-4 border-0 shadow-sm rounded-4">
+        <div className="card-body p-4">
+          <h5 className="card-title fw-bold mb-3">
+            <i className="fas fa-comments me-2" style={{ color: '#07255b' }}></i>
+            Comments ({post.comments?.length || 0})
+          </h5>
+          <hr className="mb-4" />
+
+          {post.comments && post.comments.length > 0 ? (
+            post.comments.map(comment => (
+              <div key={comment.id} className="mb-4">
+                <div className="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <strong>{comment.author}</strong>
+                    {comment.from_admin && <span className="badge ms-2" style={{ backgroundColor: '#07255b' }}>Admin</span>}
+                    <br />
+                    <small className="text-muted">{new Date(comment.timestamp).toLocaleString()}</small>
+                  </div>
+                  {isLoggedIn && replyTo !== comment.id && (
+                    <button className="btn btn-sm btn-link" style={{ color: '#07255b' }} onClick={() => { setReplyTo(comment.id); setCommentData({ ...commentData, author: '', content: '' }); }}>
+                      <i className="fas fa-reply me-1"></i> Reply
+                    </button>
+                  )}
+                </div>
+                <div className="comment-content p-3 bg-light rounded-3">
+                  <ReactMarkdown>{comment.content}</ReactMarkdown>
+                </div>
+                {comment.replies && comment.replies.map(reply => (
+                  <div key={reply.id} className="mt-3 ms-4 ps-3 border-start border-3" style={{ borderColor: '#07255b !important' }}>
+                    <div className="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <strong>{reply.author}</strong>
+                        {reply.from_admin && <span className="badge ms-2" style={{ backgroundColor: '#07255b' }}>Admin</span>}
+                        <br />
+                        <small className="text-muted">{new Date(reply.timestamp).toLocaleString()}</small>
+                      </div>
+                    </div>
+                    <div className="comment-content p-2">
+                      <ReactMarkdown>{reply.content}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))
+          ) : (
+            <p className="text-muted text-center py-4">
+              <i className="fas fa-comment-slash fa-2x mb-2 d-block"></i>
+              No comments yet. Be the first to comment!
+            </p>
+          )}
+
+          <div className="mt-4 pt-3 border-top">
+            <h6 className="mb-3">
+              {replyTo ? `Replying to comment #${replyTo}` : 'Leave a Comment'}
+              {replyTo && (
+                <button className="btn btn-sm btn-link ms-2" style={{ color: '#07255b' }} onClick={() => setReplyTo(null)}>
+                  Cancel Reply
+                </button>
+              )}
+            </h6>
+            {!isLoggedIn && (
+              <div className="alert alert-info small">
+                <i className="fas fa-info-circle me-2"></i>
+                Your comment will be reviewed by admin before appearing.
+              </div>
+            )}
+            <div className="bg-light p-3 rounded-3">
+              <div className="mb-2">
+                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleAIComment} disabled={aiGeneratingComment}>
+                  {aiGeneratingComment ? (
+                    <><span className="spinner-border spinner-border-sm me-1"></span> Generating...</>
+                  ) : (
+                    '🤖 AI Comment'
+                  )}
+                </button>
+                <small className="text-muted ms-2">Generate an AI-powered comment</small>
+              </div>
+              <div className="row">
+                <div className="col-md-6 mb-2">
+                  <input type="text" className="form-control" placeholder="Your Name *"
+                    value={commentData.author} onChange={(e) => setCommentData({...commentData, author: e.target.value})} />
+                </div>
+                <div className="col-md-6 mb-2">
+                  <input type="email" className="form-control" placeholder="Your Email"
+                    value={commentData.email} onChange={(e) => setCommentData({...commentData, email: e.target.value})} />
+                </div>
+              </div>
+              <input type="text" className="form-control mb-2" placeholder="Your Website (optional)"
+                value={commentData.site} onChange={(e) => setCommentData({...commentData, site: e.target.value})} />
+              <textarea className="form-control mb-2" rows="4" placeholder="Your Comment *"
+                value={commentData.content} onChange={(e) => setCommentData({...commentData, content: e.target.value})} />
+              <button className="btn rounded-pill px-4" style={{ backgroundColor: '#07255b', color: 'white', border: 'none' }} onClick={handleAddComment}>
+                <i className="fas fa-paper-plane me-2"></i> Post Comment
+              </button>
             </div>
           </div>
         </div>
