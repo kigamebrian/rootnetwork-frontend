@@ -17,24 +17,20 @@ import LoginModalContent from './components/LoginModalContent';
 import HomePage from './pages/HomePage';
 import BlogPage from './components/BlogPage';
 import AboutPage from './pages/AboutPage';
-import AdminPanel from './pages/admin/AdminPanel';
+import AdminPanel from './components/AdminPanel';
 import PostDetail from './components/PostDetail';
 import EditPost from './components/EditPost';
 import AnalyticsPage from './components/AnalyticsPage';
 import SecurityDashboard from './components/SecurityDashboard';
 import Profile from './components/Profile';
 import SetupRoute from './pages/SetupRoute';
-import VerifySubscription from './pages/VerifySubscription';
-import AdminSchedulerSettings from './pages/admin/AdminSchedulerSettings';
 
 // Hooks & Utils
 import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
-import API_URL from './config';
 
-// Configure axios
-axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
+axios.defaults.baseURL = 'http://localhost:5000';
 
 function AppContent() {
   const { isLoggedIn, adminData, loading, handleLogin, handleLogout, fetchAdminData } = useAuth();
@@ -86,7 +82,7 @@ function AppContent() {
 
   const onLoginSuccess = () => {
     setLoginCreds({ identifier: '', password: '' });
-    navigate(-1);
+    navigate(-1); // Close modal and go back
   };
 
   if (loading || !initialCheckDone) {
@@ -104,7 +100,7 @@ function AppContent() {
       <Toaster position="top-right" />
       
       {isHomePage && (
-        <div className="fullscreen-bg" style={{ backgroundImage: `url(${API_URL}/static/index.jpg)` }}></div>
+        <div className="fullscreen-bg" style={{ backgroundImage: `url(http://localhost:5000/static/index.jpg)` }}></div>
       )}
 
       <div className="d-flex flex-column min-vh-100">
@@ -115,22 +111,8 @@ function AppContent() {
           handleLogout={handleLogout}
         />
 
-        <main className="container" style={{ paddingBottom: '20px', paddingTop: '40px' }}>
-          {/* ========== ADMIN ROUTES (always use current location) ========== */}
-          <Routes>
-            <Route path="/admin/edit/:slug" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
-            <Route path="/admin/create" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
-            <Route path="/admin" element={isLoggedIn ? <AdminPanel isSuperAdmin={adminData?.is_super_admin} currentUserId={adminData?.id} /> : <div className="alert alert-warning">Please login first</div>} />
-            <Route path="/admin/analytics" element={isLoggedIn && adminData?.is_super_admin ? <AnalyticsPage isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
-            <Route path="/admin/security" element={isLoggedIn && adminData?.is_super_admin ? <SecurityDashboard isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
-            <Route path="/admin/scheduler" element={
-              isLoggedIn && adminData?.is_super_admin ? 
-              <AdminSchedulerSettings /> : 
-              <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>
-            } />
-          </Routes>
-
-          {/* ========== PUBLIC ROUTES (with background support for modals) ========== */}
+        <main className="container" style={{ paddingBottom: '50px', paddingTop: '80px' }}>
+          {/* Main Routes with background support */}
           <Routes location={backgroundLocation || location}>
             <Route path="/" element={<HomePage adminData={adminData} />} />
             <Route path="/blog" element={<BlogPage isLoggedIn={isLoggedIn} />} />
@@ -138,8 +120,12 @@ function AppContent() {
             <Route path="/blog/post/:slug" element={<PostDetail isLoggedIn={isLoggedIn} adminData={adminData} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
             <Route path="/about" element={<AboutPage adminData={adminData} />} />
             <Route path="/setup" element={<SetupRoute setShowRegister={setShowRegister} isLoggedIn={isLoggedIn} adminData={adminData} />} />
+            <Route path="/admin/edit/:slug" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
+            <Route path="/admin/create" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
+            <Route path="/admin" element={isLoggedIn ? <AdminPanel isSuperAdmin={adminData?.is_super_admin} currentUserId={adminData?.id} /> : <div className="alert alert-warning">Please login first</div>} />
+            <Route path="/admin/analytics" element={isLoggedIn && adminData?.is_super_admin ? <AnalyticsPage isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
+            <Route path="/admin/security" element={isLoggedIn && adminData?.is_super_admin ? <SecurityDashboard isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
             <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} adminData={adminData} onUpdate={fetchAdminData} />} />
-            <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
           </Routes>
           
           {/* Modal Routes */}
