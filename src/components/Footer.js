@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
-import API_URL from '../config';   // <-- import config
+import API_URL from '../config';
 
 function Footer({ isLoggedIn, adminData, handleLogout }) {
   const navigate = useNavigate();
@@ -106,15 +106,48 @@ function Footer({ isLoggedIn, adminData, handleLogout }) {
             </div>
           </div>
 
+          {/* ===== UPDATED: SOCIAL ICONS ===== */}
           <div className="col-lg-2 offset-lg-1 col-md-3">
             <div className="footer-wizard">
               <h6>Follow us</h6>
-              <ul className="list-unstyled">
-                <li><a href="#">Facebook</a></li>
-                <li><a href="#">Twitter</a></li>
-                <li><a href="#">Instagram</a></li>
-                <li><a href="#">Youtube</a></li>
-              </ul>
+              <div className="social-icons">
+                <a 
+                  href="#" 
+                  className="social-icon" 
+                  aria-label="Facebook"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i className="fab fa-facebook-f"></i>
+                </a>
+                <a 
+                  href="#" 
+                  className="social-icon" 
+                  aria-label="Twitter"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i className="fab fa-twitter"></i>
+                </a>
+                <a 
+                  href="#" 
+                  className="social-icon" 
+                  aria-label="Instagram"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i className="fab fa-instagram"></i>
+                </a>
+                <a 
+                  href="#" 
+                  className="social-icon" 
+                  aria-label="YouTube"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i className="fab fa-youtube"></i>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -269,6 +302,37 @@ function Footer({ isLoggedIn, adminData, handleLogout }) {
         .footer-auth .btn-link:hover {
           color: #07255b !important;
         }
+
+        /* ===== SOCIAL ICONS STYLING ===== */
+        .social-icons {
+          display: flex;
+          gap: 16px;
+          flex-wrap: wrap;
+          margin-top: 4px;
+        }
+        .social-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          color: #07255b !important;
+          background-color: transparent;
+          border: 2px solid #07255b;
+          transition: all 0.3s ease;
+          text-decoration: none !important;
+          font-size: 18px;
+        }
+        .social-icon:hover {
+          background-color: #07255b;
+          color: white !important;
+          transform: translateY(-3px);
+          box-shadow: 0 4px 12px rgba(7, 37, 91, 0.25);
+        }
+        .social-icon i {
+          line-height: 1;
+        }
         
         @media (max-width: 991px) {
           .footer {
@@ -291,6 +355,9 @@ function Footer({ isLoggedIn, adminData, handleLogout }) {
             gap: 12px;
           }
           .footer-links {
+            justify-content: center;
+          }
+          .social-icons {
             justify-content: center;
           }
         }
