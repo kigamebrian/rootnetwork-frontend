@@ -116,8 +116,18 @@ function AppContent() {
         />
 
         <main className="container" style={{ paddingBottom: '20px', paddingTop: '40px' }}>
-          {/* ========== ADMIN ROUTES (always use current location) ========== */}
+          {/* Main routes – always use the actual URL */}
           <Routes>
+            <Route path="/" element={<HomePage adminData={adminData} />} />
+            <Route path="/blog" element={<BlogPage isLoggedIn={isLoggedIn} />} />
+            <Route path="/category/:categorySlug" element={<BlogPage isLoggedIn={isLoggedIn} />} />
+            <Route path="/blog/post/:slug" element={<PostDetail isLoggedIn={isLoggedIn} adminData={adminData} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
+            <Route path="/about" element={<AboutPage adminData={adminData} />} />
+            <Route path="/setup" element={<SetupRoute setShowRegister={setShowRegister} isLoggedIn={isLoggedIn} adminData={adminData} />} />
+            <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} adminData={adminData} onUpdate={fetchAdminData} />} />
+            <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
+            
+            {/* Admin routes */}
             <Route path="/admin/edit/:slug" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
             <Route path="/admin/create" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
             <Route path="/admin" element={isLoggedIn ? <AdminPanel isSuperAdmin={adminData?.is_super_admin} currentUserId={adminData?.id} /> : <div className="alert alert-warning">Please login first</div>} />
@@ -129,28 +139,19 @@ function AppContent() {
               <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>
             } />
           </Routes>
-
-          {/* ========== PUBLIC ROUTES (with background support for modals) ========== */}
-          <Routes location={backgroundLocation || location}>
-            <Route path="/" element={<HomePage adminData={adminData} />} />
-            <Route path="/blog" element={<BlogPage isLoggedIn={isLoggedIn} />} />
-            <Route path="/category/:categorySlug" element={<BlogPage isLoggedIn={isLoggedIn} />} />
-            <Route path="/blog/post/:slug" element={<PostDetail isLoggedIn={isLoggedIn} adminData={adminData} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
-            <Route path="/about" element={<AboutPage adminData={adminData} />} />
-            <Route path="/setup" element={<SetupRoute setShowRegister={setShowRegister} isLoggedIn={isLoggedIn} adminData={adminData} />} />
-            <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} adminData={adminData} onUpdate={fetchAdminData} />} />
-            <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
-          </Routes>
-          
-          {/* Modal Routes */}
+        
+          {/* Modal overlay – only when backgroundLocation exists */}
           {backgroundLocation && (
-            <Routes>
+            <Routes location={backgroundLocation}>
               <Route path="/login" element={
                 <LoginModalContent 
                   loginCreds={loginCreds}
                   setLoginCreds={setLoginCreds}
                   handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
-                  onClose={() => navigate(-1)}
+                  onClose={() => {
+                    setLoginCreds({ identifier: '', password: '' });
+                    navigate(-1);
+                  }}
                 />
               } />
             </Routes>
