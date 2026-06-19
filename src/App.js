@@ -32,6 +32,7 @@ import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
 import API_URL from './config';
 
+// Configure axios
 axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
 
@@ -42,11 +43,11 @@ function AppContent() {
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-
+  
   const backgroundLocation = location.state?.backgroundLocation;
   const isHomePage = location.pathname === '/';
 
-  // Redirect direct /login visits (without background state) to home
+  // Redirect direct /login visits (without background) to home
   useEffect(() => {
     if (location.pathname === '/login' && !backgroundLocation) {
       navigate('/', { replace: true });
@@ -90,9 +91,14 @@ function AppContent() {
     fetchAdminData();
   };
 
-  const onLoginSuccess = () => {
+  // ========== FIX: navigate to the background page after login/cancel ==========
+  const closeModal = () => {
     setLoginCreds({ identifier: '', password: '' });
-    navigate(-1);
+    if (backgroundLocation) {
+      navigate(backgroundLocation.pathname);
+    } else {
+      navigate(-1);
+    }
   };
 
   if (loading || !initialCheckDone) {
@@ -108,13 +114,13 @@ function AppContent() {
   return (
     <div className={isHomePage ? "homepage-container" : "app-container"}>
       <Toaster position="top-right" />
-
+      
       {isHomePage && (
         <div className="fullscreen-bg" style={{ backgroundImage: `url(${API_URL}/static/index.jpg)` }}></div>
       )}
 
       <div className="d-flex flex-column min-vh-100">
-        <Navbar
+        <Navbar 
           isLoggedIn={isLoggedIn}
           adminData={adminData}
           setShowRegister={setShowRegister}
@@ -122,7 +128,21 @@ function AppContent() {
         />
 
         <main className="container" style={{ paddingBottom: '20px', paddingTop: '40px' }}>
-          {/* ========== PUBLIC ROUTES (background content) ========== */}
+          {/* ========== ADMIN ROUTES (always use current location) ========== */}
+          <Routes>
+            <Route path="/admin/edit/:slug" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
+            <Route path="/admin/create" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
+            <Route path="/admin" element={isLoggedIn ? <AdminPanel isSuperAdmin={adminData?.is_super_admin} currentUserId={adminData?.id} /> : <div className="alert alert-warning">Please login first</div>} />
+            <Route path="/admin/analytics" element={isLoggedIn && adminData?.is_super_admin ? <AnalyticsPage isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
+            <Route path="/admin/security" element={isLoggedIn && adminData?.is_super_admin ? <SecurityDashboard isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
+            <Route path="/admin/scheduler" element={
+              isLoggedIn && adminData?.is_super_admin ? 
+              <AdminSchedulerSettings /> : 
+              <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>
+            } />
+          </Routes>
+
+          {/* ========== PUBLIC ROUTES (with background support for modals) ========== */}
           <Routes location={backgroundLocation || location}>
             <Route path="/" element={<HomePage adminData={adminData} />} />
             <Route path="/blog" element={<BlogPage isLoggedIn={isLoggedIn} />} />
@@ -133,51 +153,30 @@ function AppContent() {
             <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} adminData={adminData} onUpdate={fetchAdminData} />} />
             <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
           </Routes>
-
-          {/* ========== ADMIN ROUTES (always current location) ========== */}
-          <Routes>
-            <Route path="/admin/edit/:slug" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
-            <Route path="/admin/create" element={<EditPost isLoggedIn={isLoggedIn} currentUserId={adminData?.id} isSuperAdmin={adminData?.is_super_admin} />} />
-            <Route path="/admin" element={isLoggedIn ? <AdminPanel isSuperAdmin={adminData?.is_super_admin} currentUserId={adminData?.id} /> : <div className="alert alert-warning">Please login first</div>} />
-            <Route path="/admin/analytics" element={isLoggedIn && adminData?.is_super_admin ? <AnalyticsPage isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
-            <Route path="/admin/security" element={isLoggedIn && adminData?.is_super_admin ? <SecurityDashboard isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
-            <Route path="/admin/scheduler" element={
-              isLoggedIn && adminData?.is_super_admin ?
-                <AdminSchedulerSettings /> :
-                <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>
-            } />
-          </Routes>
-
-          {/* ========== MODAL OVERLAY (only when backgroundLocation exists) ========== */}
+          
+          {/* ========== MODAL OVERLAY ========== */}
           {backgroundLocation && (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1050, pointerEvents: 'none' }}>
-              <div style={{ pointerEvents: 'auto', width: '100%', height: '100%' }}>
-                <Routes>
-                  <Route path="/login" element={
-                    <LoginModalContent
-                      loginCreds={loginCreds}
-                      setLoginCreds={setLoginCreds}
-                      handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
-                      onClose={() => {
-                        setLoginCreds({ identifier: '', password: '' });
-                        navigate(-1);
-                      }}
-                    />
-                  } />
-                </Routes>
-              </div>
-            </div>
+            <Routes location={backgroundLocation}>
+              <Route path="/login" element={
+                <LoginModalContent 
+                  loginCreds={loginCreds}
+                  setLoginCreds={setLoginCreds}
+                  handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
+                  onClose={closeModal}
+                />
+              } />
+            </Routes>
           )}
         </main>
 
-        <Footer
+        <Footer 
           isLoggedIn={isLoggedIn}
           adminData={adminData}
           handleLogout={handleLogout}
         />
       </div>
 
-      <RegisterModal
+      <RegisterModal 
         showRegister={showRegister}
         setShowRegister={setShowRegister}
         onRegisterSuccess={handleRegisterSuccess}
