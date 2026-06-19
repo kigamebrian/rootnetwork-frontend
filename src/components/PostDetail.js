@@ -262,6 +262,9 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
     });
   };
 
+  // ---- Default social sharing image (site logo) ----
+  const defaultSocialImage = `${API_URL}/static/rootnetwork-og-image.jpg`; // Put your default image in static folder
+
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -277,6 +280,10 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
   const metaDescription = post.meta_description || "Read our latest blog post for insights and updates.";
   const readingTime = post.reading_time || getReadingTime(post.content);
   const keywords = post.keywords || `${post.title}, blog, article, news`;
+  const imageUrl = getImageUrl(post.image) || defaultSocialImage;
+  const ogImageWidth = "1200";
+  const ogImageHeight = "630";
+  const altText = post.title;
 
   return (
     <>
@@ -285,20 +292,32 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
         <meta name="keywords" content={keywords} />
         <meta name="author" content={post.author?.full_name || post.author?.username || 'Admin'} />
         <meta name="reading-time" content={`${readingTime}`} />
+
+        {/* ---- Open Graph (Facebook, LinkedIn, etc.) ---- */}
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={metaDescription} />
         <meta property="og:type" content="article" />
         <meta property="og:url" content={window.location.href} />
         <meta property="og:site_name" content="RootNetwork" />
-        {post.image && <meta property="og:image" content={getImageUrl(post.image)} />}
+        <meta property="og:image" content={imageUrl} />
+        <meta property="og:image:width" content={ogImageWidth} />
+        <meta property="og:image:height" content={ogImageHeight} />
+        <meta property="og:image:alt" content={altText} />
+        <meta property="og:image:type" content="image/jpeg" />
+
+        {/* ---- Twitter Card ---- */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={post.title} />
         <meta name="twitter:description" content={metaDescription} />
-        {post.image && <meta name="twitter:image" content={getImageUrl(post.image)} />}
-        <link rel="canonical" href={window.location.href} />
+        <meta name="twitter:image" content={imageUrl} />
+        <meta name="twitter:image:alt" content={altText} />
+
+        {/* ---- Article specific ---- */}
         <meta property="article:published_time" content={post.timestamp} />
         <meta property="article:author" content={post.author?.full_name || post.author?.username} />
         {post.category && <meta property="article:section" content={post.category.name} />}
+
+        <link rel="canonical" href={window.location.href} />
       </Helmet>
 
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -337,13 +356,13 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
               </div>
             </div>
             <div className="mt-2 mt-sm-0">
-              <ShareButton title={post.title} url={window.location.href} image={getImageUrl(post.image)} description={metaDescription} />
+              <ShareButton title={post.title} url={window.location.href} image={imageUrl} description={metaDescription} />
             </div>
           </div>
 
           {post.image && (
             <div className="mb-4 text-center">
-              <img src={getImageUrl(post.image)} alt={post.title} className="img-fluid rounded-4 shadow-sm" style={{ maxHeight: '500px', width: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+              <img src={imageUrl} alt={post.title} className="img-fluid rounded-4 shadow-sm" style={{ maxHeight: '500px', width: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
             </div>
           )}
 
