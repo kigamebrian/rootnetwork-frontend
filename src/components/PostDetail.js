@@ -58,7 +58,7 @@ function AudioPlayer({ content, title }) {
   );
 }
 
-// ---- Share Button ----
+// ---- Share Button Component ----
 function ShareButton({ title, url, image, description }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -262,9 +262,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
     });
   };
 
-  // ---- Default social sharing image (site logo) ----
-  const defaultSocialImage = `${API_URL}/static/rootnetwork-og-image.jpg`; // Put your default image in static folder
-
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -277,47 +274,90 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
 
   if (!post) return <div className="alert alert-danger">Post not found</div>;
 
-  const metaDescription = post.meta_description || "Read our latest blog post for insights and updates.";
+  const metaDescription = post.meta_description ||
+    (post.content ? post.content.replace(/<[^>]*>/g, '').substring(0, 160) : 'Read our latest blog post for insights and updates.');
   const readingTime = post.reading_time || getReadingTime(post.content);
   const keywords = post.keywords || `${post.title}, blog, article, news`;
-  const imageUrl = getImageUrl(post.image) || defaultSocialImage;
-  const ogImageWidth = "1200";
-  const ogImageHeight = "630";
-  const altText = post.title;
+  const tags = keywords.split(',').map(tag => tag.trim()).filter(t => t);
+
+  // ---- Social sharing image fallback ----
+  const DEFAULT_OG_IMAGE = `${API_URL}/static/og-default.jpg`; // place a default image in your static folder
+  const ogImage = post.image ? getImageUrl(post.image) : DEFAULT_OG_IMAGE;
+  const ogImageAlt = post.title;
+  const ogUrl = window.location.href;
+  const siteName = 'RootNetwork';
+  const twitterSite = '@RootNetwork';
+
+  // ========== JSON‑LD Structured Data ==========
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title,
+    "description": metaDescription,
+    "image": ogImage,
+    "author": {
+      "@type": "Person",
+      "name": post.author?.full_name || post.author?.username || "Anonymous"
+    },
+    "datePublished": post.timestamp,
+    "dateModified": post.timestamp, // could be updated_at if available
+    "publisher": {
+      "@type": "Organization",
+      "name": siteName,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${API_URL}/static/logo.png` // replace with your actual logo URL
+      }
+    },
+    "mainEntityOfPage": {
+      "@id": ogUrl
+    },
+    "keywords": keywords,
+    "articleSection": post.category?.name || "General"
+  };
 
   return (
     <>
       <Helmet>
+        {/* Standard meta tags */}
         <meta name="description" content={metaDescription} />
         <meta name="keywords" content={keywords} />
         <meta name="author" content={post.author?.full_name || post.author?.username || 'Admin'} />
         <meta name="reading-time" content={`${readingTime}`} />
 
-        {/* ---- Open Graph (Facebook, LinkedIn, etc.) ---- */}
+        {/* Open Graph */}
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={metaDescription} />
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={window.location.href} />
-        <meta property="og:site_name" content="RootNetwork" />
-        <meta property="og:image" content={imageUrl} />
-        <meta property="og:image:width" content={ogImageWidth} />
-        <meta property="og:image:height" content={ogImageHeight} />
-        <meta property="og:image:alt" content={altText} />
-        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:url" content={ogUrl} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:locale" content="en_US" />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={ogImageAlt} />
 
-        {/* ---- Twitter Card ---- */}
+        {/* Twitter Cards */}
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content={twitterSite} />
         <meta name="twitter:title" content={post.title} />
         <meta name="twitter:description" content={metaDescription} />
-        <meta name="twitter:image" content={imageUrl} />
-        <meta name="twitter:image:alt" content={altText} />
+        <meta name="twitter:image" content={ogImage} />
+        <meta name="twitter:image:alt" content={ogImageAlt} />
 
-        {/* ---- Article specific ---- */}
+        {/* Article specific */}
+        <link rel="canonical" href={ogUrl} />
         <meta property="article:published_time" content={post.timestamp} />
         <meta property="article:author" content={post.author?.full_name || post.author?.username} />
         {post.category && <meta property="article:section" content={post.category.name} />}
+        {tags.map((tag, idx) => (
+          <meta property="article:tag" content={tag} key={idx} />
+        ))}
 
-        <link rel="canonical" href={window.location.href} />
+        {/* ===== JSON‑LD Structured Data ===== */}
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLd)}
+        </script>
       </Helmet>
 
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -356,13 +396,13 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
               </div>
             </div>
             <div className="mt-2 mt-sm-0">
-              <ShareButton title={post.title} url={window.location.href} image={imageUrl} description={metaDescription} />
+              <ShareButton title={post.title} url={ogUrl} image={ogImage} description={metaDescription} />
             </div>
           </div>
 
           {post.image && (
             <div className="mb-4 text-center">
-              <img src={imageUrl} alt={post.title} className="img-fluid rounded-4 shadow-sm" style={{ maxHeight: '500px', width: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+              <img src={ogImage} alt={post.title} className="img-fluid rounded-4 shadow-sm" style={{ maxHeight: '500px', width: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
             </div>
           )}
 
