@@ -30,8 +30,9 @@ import AdminSchedulerSettings from './pages/admin/AdminSchedulerSettings';
 // Hooks & Utils
 import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
-import API_URL from './config';
+import API_URL from './config';   // <-- import config
 
+// Configure axios
 axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
 
@@ -46,7 +47,7 @@ function AppContent() {
   const backgroundLocation = location.state?.backgroundLocation;
   const isHomePage = location.pathname === '/';
 
-  // 🔁 Redirect direct /login visits (without background) to home
+  // Redirect direct /login visits (without background) to home
   useEffect(() => {
     if (location.pathname === '/login' && !backgroundLocation) {
       navigate('/', { replace: true });
