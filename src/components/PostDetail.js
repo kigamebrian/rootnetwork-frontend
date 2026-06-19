@@ -146,6 +146,20 @@ function ShareButton({ title, url, image, description }) {
   );
 }
 
+// ---- Custom image component for ReactMarkdown with lazy loading ----
+const MarkdownImage = ({ src, alt, ...props }) => {
+  // If the image path is relative, prepend API_URL
+  const imageUrl = src && src.startsWith('http') ? src : `${API_URL}${src}`;
+  return <img src={imageUrl} alt={alt || ''} loading="lazy" className="img-fluid rounded-3 my-3" {...props} />;
+};
+
+// ---- Custom HTML image lazy loading (for dangerouslySetInnerHTML) ----
+const addLazyLoadingToHtml = (html) => {
+  if (!html) return html;
+  // Add loading="lazy" to all img tags that don't already have it
+  return html.replace(/<img /g, '<img loading="lazy" ');
+};
+
 // ---- Main Component ----
 function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
   const { slug } = useParams();
@@ -281,7 +295,7 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
   const tags = keywords.split(',').map(tag => tag.trim()).filter(t => t);
 
   // ---- Social sharing image fallback ----
-  const DEFAULT_OG_IMAGE = `${API_URL}/static/og-default.jpg`; // place a default image in your static folder
+  const DEFAULT_OG_IMAGE = `${API_URL}/static/og-default.jpg`;
   const ogImage = post.image ? getImageUrl(post.image) : DEFAULT_OG_IMAGE;
   const ogImageAlt = post.title;
   const ogUrl = window.location.href;
@@ -300,13 +314,13 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
       "name": post.author?.full_name || post.author?.username || "Anonymous"
     },
     "datePublished": post.timestamp,
-    "dateModified": post.timestamp, // could be updated_at if available
+    "dateModified": post.timestamp,
     "publisher": {
       "@type": "Organization",
       "name": siteName,
       "logo": {
         "@type": "ImageObject",
-        "url": `${API_URL}/static/logo.png` // replace with your actual logo URL
+        "url": `${API_URL}/static/logo.png`
       }
     },
     "mainEntityOfPage": {
@@ -316,16 +330,20 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
     "articleSection": post.category?.name || "General"
   };
 
+  // ===== Process content for lazy loading =====
+  let contentHtml = post.content;
+  if (isHTML(post.content)) {
+    contentHtml = addLazyLoadingToHtml(post.content);
+  }
+
   return (
     <>
       <Helmet>
-        {/* Standard meta tags */}
         <meta name="description" content={metaDescription} />
         <meta name="keywords" content={keywords} />
         <meta name="author" content={post.author?.full_name || post.author?.username || 'Admin'} />
         <meta name="reading-time" content={`${readingTime}`} />
 
-        {/* Open Graph */}
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={metaDescription} />
         <meta property="og:type" content="article" />
@@ -337,7 +355,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
         <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content={ogImageAlt} />
 
-        {/* Twitter Cards */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content={twitterSite} />
         <meta name="twitter:title" content={post.title} />
@@ -345,7 +362,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
         <meta name="twitter:image" content={ogImage} />
         <meta name="twitter:image:alt" content={ogImageAlt} />
 
-        {/* Article specific */}
         <link rel="canonical" href={ogUrl} />
         <meta property="article:published_time" content={post.timestamp} />
         <meta property="article:author" content={post.author?.full_name || post.author?.username} />
@@ -354,7 +370,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
           <meta property="article:tag" content={tag} key={idx} />
         ))}
 
-        {/* ===== JSON‑LD Structured Data ===== */}
         <script type="application/ld+json">
           {JSON.stringify(jsonLd)}
         </script>
@@ -376,7 +391,14 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
             <div className="d-flex align-items-center gap-3">
               <div className="flex-shrink-0">
                 {getAuthorImage(post.author?.profile_image) ? (
-                  <img src={getAuthorImage(post.author?.profile_image)} alt={post.author?.full_name || post.author?.username} className="rounded-circle" width="48" height="48" style={{ objectFit: 'cover', border: '2px solid #e9ecef' }} />
+                  <img 
+                    src={getAuthorImage(post.author?.profile_image)} 
+                    alt={post.author?.full_name || post.author?.username} 
+                    className="rounded-circle" 
+                    width="48" height="48" 
+                    style={{ objectFit: 'cover', border: '2px solid #e9ecef' }} 
+                    loading="lazy"
+                  />
                 ) : (
                   <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
                     <i className="fas fa-user text-white fa-lg"></i>
@@ -402,7 +424,14 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
 
           {post.image && (
             <div className="mb-4 text-center">
-              <img src={ogImage} alt={post.title} className="img-fluid rounded-4 shadow-sm" style={{ maxHeight: '500px', width: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+              <img 
+                src={ogImage} 
+                alt={post.title} 
+                className="img-fluid rounded-4 shadow-sm" 
+                style={{ maxHeight: '500px', width: '100%', objectFit: 'cover' }} 
+                loading="lazy"
+                onError={(e) => { e.target.style.display = 'none'; }} 
+              />
             </div>
           )}
 
@@ -410,9 +439,16 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
 
           <div className="post-detail-content mt-4">
             {isHTML(post.content) ? (
-              <div dangerouslySetInnerHTML={{ __html: post.content }} />
+              <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
             ) : (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  img: MarkdownImage
+                }}
+              >
+                {post.content}
+              </ReactMarkdown>
             )}
           </div>
         </div>
