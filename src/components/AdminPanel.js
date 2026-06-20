@@ -1,4 +1,4 @@
-// frontend/src/components/AdminPanel.js - FINAL (with Subscribers & Scheduler)
+// frontend/src/components/AdminPanel.js - FINAL
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -7,27 +7,39 @@ import DataTable from './DataTable';
 import RateLimitDashboard from './RateLimitDashboard';
 import { useNavigate } from 'react-router-dom';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-import API_URL from '../config'; // Add this import
+import API_URL from '../config';
 
-// ========== PostModal (unchanged) ==========
-const PostModal = React.memo(({ 
-  showCreateForm, 
-  editingPost, 
-  postForm, 
-  setPostForm, 
-  categories, 
-  handleImageUpload, 
-  uploadingImage, 
-  handleUpdatePost, 
-  handleCreatePost, 
-  cancelEdit, 
-  isUpdating, 
-  isCreating, 
-  editorKey,
-  API_URL 
+// ========== Helper ==========
+const getFullImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) return imagePath;
+  return `${API_URL}${imagePath}`;
+};
+
+// ========== PostModal (with multiple images) ==========
+const PostModal = React.memo(({
+  showCreateForm,
+  editingPost,
+  postForm,
+  setPostForm,
+  categories,
+  handleImageUpload,
+  uploadingImage,
+  handleMultipleImageUpload,
+  uploadingMultiple,
+  images,
+  removeImage,
+  updateImageCaption,
+  updateImageAlt,
+  handleUpdatePost,
+  handleCreatePost,
+  cancelEdit,
+  isUpdating,
+  isCreating,
+  editorKey
 }) => {
   if (!showCreateForm && !editingPost) return null;
-  
+
   return (
     <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) cancelEdit(); }}>
       <div className="modal-content" style={{ width: '90%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', top: '50%', transform: 'translateY(-50%)' }}>
@@ -37,10 +49,12 @@ const PostModal = React.memo(({
         </div>
         <div className="modal-body">
           <form onSubmit={editingPost ? handleUpdatePost : handleCreatePost} id="postForm">
+            {/* Title */}
             <div className="mb-3">
               <label className="form-label fw-bold">Title *</label>
               <input type="text" className="form-control" value={postForm.title} onChange={(e) => setPostForm({...postForm, title: e.target.value})} required />
             </div>
+            {/* Category */}
             <div className="mb-3">
               <label className="form-label fw-bold">Category</label>
               <select className="form-select" value={postForm.category_id} onChange={(e) => setPostForm({...postForm, category_id: e.target.value})}>
@@ -48,6 +62,7 @@ const PostModal = React.memo(({
                 {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
               </select>
             </div>
+            {/* Status */}
             <div className="mb-3">
               <label className="form-label fw-bold">Post Status</label>
               <select className="form-select" value={postForm.status} onChange={(e) => { const newStatus = e.target.value; setPostForm({...postForm, status: newStatus}); if (newStatus !== 'scheduled') setPostForm({...postForm, status: newStatus, scheduled_for: ''}); }}>
@@ -68,12 +83,13 @@ const PostModal = React.memo(({
                 <small className="text-muted"><i className="fas fa-calendar-alt me-1"></i>Post will be published automatically at this time (UTC)</small>
               </div>
             )}
+            {/* Featured Image */}
             <div className="mb-3">
               <label className="form-label fw-bold">Featured Image</label>
               <div className="border rounded p-3">
                 {postForm.image && (
                   <div className="mb-3">
-                    <img src={postForm.image.startsWith('http') ? postForm.image : `${API_URL}${postForm.image}`} alt="Featured" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover' }} />
+                    <img src={getFullImageUrl(postForm.image)} alt="Featured" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover' }} />
                     <button type="button" className="btn btn-sm btn-danger mt-2" onClick={() => setPostForm({...postForm, image: ''})}>Remove Image</button>
                   </div>
                 )}
@@ -81,6 +97,64 @@ const PostModal = React.memo(({
                 {uploadingImage && <div className="mt-2 text-primary"><span className="spinner-border spinner-border-sm me-1"></span>Uploading...</div>}
               </div>
             </div>
+
+            {/* Additional Images Section */}
+            <div className="mb-3">
+              <label className="form-label fw-bold">Additional Images (with captions)</label>
+              <p className="text-muted small">Upload up to 10 images. Use <code>[image:0]</code>, <code>[image:1]</code>, etc. in the content to place them.</p>
+              <input
+                type="file"
+                className="form-control"
+                accept="image/*"
+                multiple
+                onChange={handleMultipleImageUpload}
+                disabled={uploadingMultiple || images.length >= 10}
+              />
+              {uploadingMultiple && <div className="mt-2 text-primary"><span className="spinner-border spinner-border-sm me-1"></span>Uploading...</div>}
+              {images.length >= 10 && <div className="mt-2 text-warning">Maximum 10 images reached.</div>}
+
+              <div className="mt-3">
+                {images.map((img, idx) => (
+                  <div key={idx} className="d-flex align-items-start gap-3 p-2 border rounded mb-2">
+                    <img
+                      src={getFullImageUrl(img.url)}
+                      alt={img.alt || 'Image'}
+                      style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px' }}
+                    />
+                    <div className="flex-grow-1">
+                      <input
+                        type="text"
+                        className="form-control form-control-sm mb-1"
+                        placeholder="Caption"
+                        value={img.caption}
+                        onChange={(e) => updateImageCaption(idx, e.target.value)}
+                      />
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Alt text (optional)"
+                        value={img.alt}
+                        onChange={(e) => updateImageAlt(idx, e.target.value)}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-danger"
+                      onClick={() => removeImage(idx)}
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                ))}
+                {images.length > 0 && (
+                  <small className="text-muted">
+                    {images.length} image{images.length > 1 ? 's' : ''} uploaded.
+                  </small>
+                )}
+              </div>
+            </div>
+
+            {/* Content */}
             <div className="mb-3">
               <label className="form-label fw-bold">Content *</label>
               <RichTextEditor key={editorKey} value={postForm.content} onChange={(content) => setPostForm({...postForm, content})} />
@@ -102,7 +176,7 @@ const PostModal = React.memo(({
 function AdminPanel({ isSuperAdmin, currentUserId }) {
   useDocumentTitle('Dashboard', 'RootNetwork');
   const navigate = useNavigate();
-  
+
   // --- Data states ---
   const [posts, setPosts] = useState([]);
   const [comments, setComments] = useState([]);
@@ -110,7 +184,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const [users, setUsers] = useState([]);
   const [trendingNews, setTrendingNews] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // --- UI states ---
   const [activeTab, setActiveTab] = useState('posts');
   const [commentFilter, setCommentFilter] = useState('all');
@@ -118,10 +192,10 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const [newCategory, setNewCategory] = useState('');
   const [newTrendingHeadline, setNewTrendingHeadline] = useState('');
   const [editingPost, setEditingPost] = useState(null);
-  const [postForm, setPostForm] = useState({ 
-    title: '', 
-    content: '', 
-    category_id: '', 
+  const [postForm, setPostForm] = useState({
+    title: '',
+    content: '',
+    category_id: '',
     image: '',
     status: 'draft',
     scheduled_for: ''
@@ -130,11 +204,15 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  
+
+  // --- Additional images state ---
+  const [images, setImages] = useState([]);
+  const [uploadingMultiple, setUploadingMultiple] = useState(false);
+
   // --- Category limit ---
   const [categoryLimit, setCategoryLimit] = useState({ max: 5, current: 0, can_add: true, remaining: 5 });
   const [addingCategory, setAddingCategory] = useState(false);
-  
+
   // --- User management ---
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -204,7 +282,6 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
         apiGet(`/api/admin/comments?filter=${commentFilter}`),
         apiGet('/api/admin/categories')
       ]);
-      
       setPosts(postsRes.data.posts || postsRes.data || []);
       setComments(commentsRes.data.comments || commentsRes.data || []);
       setCategories(categoriesRes.data || []);
@@ -394,6 +471,70 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
   };
 
+  const handleMultipleImageUpload = async (e) => {
+    const files = e.target.files;
+    if (!files.length) {
+      toast.error('No files selected');
+      return;
+    }
+    if (images.length + files.length > 10) {
+      toast.error('Maximum 10 images allowed.');
+      e.target.value = '';
+      return;
+    }
+    const maxFileSize = 5 * 1024 * 1024;
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].size > maxFileSize) {
+        toast.error(`Image "${files[i].name}" exceeds 5MB limit.`);
+        e.target.value = '';
+        return;
+      }
+    }
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append('images', files[i]);
+    }
+    setUploadingMultiple(true);
+    try {
+      const response = await axios.post(`${API_URL}/api/upload-post-images`, formData, { withCredentials: true });
+      if (response.data && response.data.images) {
+        const newImages = response.data.images;
+        setImages(prev => [...prev, ...newImages]);
+        toast.success(`${newImages.length} image(s) uploaded successfully. Add captions below.`);
+      } else {
+        toast.warning('Upload succeeded but no images returned.');
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to upload images';
+      toast.error(errorMsg);
+      console.error('Upload error:', error.response?.data || error);
+    } finally {
+      setUploadingMultiple(false);
+      e.target.value = '';
+    }
+  };
+
+  // ===== Image management helpers =====
+  const removeImage = (index) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateImageCaption = (index, caption) => {
+    setImages(prev => {
+      const updated = [...prev];
+      updated[index].caption = caption;
+      return updated;
+    });
+  };
+
+  const updateImageAlt = (index, alt) => {
+    setImages(prev => {
+      const updated = [...prev];
+      updated[index].alt = alt;
+      return updated;
+    });
+  };
+
   // ========== Posts ==========
   const handleCreatePost = async (e) => {
     e.preventDefault();
@@ -415,9 +556,11 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
     setIsCreating(true);
     try {
-      await apiPost('/api/admin/posts', postForm);
+      const postData = { ...postForm, images };
+      await apiPost('/api/admin/posts', postData);
       toast.success('Post created successfully!');
       setPostForm({ title: '', content: '', category_id: '', image: '', status: 'draft', scheduled_for: '' });
+      setImages([]);
       setShowCreateForm(false);
       loadData();
     } catch (error) {
@@ -448,10 +591,12 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     }
     setIsUpdating(true);
     try {
-      await apiPut(`/api/admin/posts/${editingPost.id}`, postForm);
+      const postData = { ...postForm, images };
+      await apiPut(`/api/admin/posts/${editingPost.id}`, postData);
       toast.success('Post updated successfully!');
       setEditingPost(null);
       setPostForm({ title: '', content: '', category_id: '', image: '', status: 'draft', scheduled_for: '' });
+      setImages([]);
       loadData();
     } catch (error) {
       console.error('Failed to update post:', error);
@@ -542,6 +687,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
         status: fullPost.status || 'draft',
         scheduled_for: fullPost.scheduled_for || ''
       });
+      setImages(fullPost.images || []);
       setShowCreateForm(false);
     } catch (error) {
       console.error('Failed to fetch post for edit:', error);
@@ -552,6 +698,7 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   const cancelEdit = () => {
     setEditingPost(null);
     setPostForm({ title: '', content: '', category_id: '', image: '', status: 'draft', scheduled_for: '' });
+    setImages([]);
     setShowCreateForm(false);
     setIsUpdating(false);
     setIsCreating(false);
@@ -798,7 +945,6 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
     </div>
   );
 
-  // ========== NEW: Render Subscribers Tab ==========
   const renderSubscribersTab = () => (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
@@ -924,17 +1070,10 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
 
   return (
     <div className="admin-panel">
-      {/* Theme style overrides */}
       <style>{`
-        .bg-theme {
-          background-color: #07255b !important;
-        }
-        .text-theme {
-          color: #07255b !important;
-        }
-        .border-theme {
-          border-color: #07255b !important;
-        }
+        .bg-theme { background-color: #07255b !important; }
+        .text-theme { color: #07255b !important; }
+        .border-theme { border-color: #07255b !important; }
         .btn-theme {
           background-color: #07255b;
           border-color: #07255b;
@@ -946,16 +1085,14 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
           color: white;
         }
         .btn-theme:focus {
-          box-shadow: 0 0 0 0.2rem rgba(7, 37, 91, 0.25);
+          box-shadow: 0 0 0 0.2rem rgba(7,37,91,0.25);
         }
         .nav-tabs .nav-link.active {
           background-color: #07255b;
           border-color: #07255b;
           color: white !important;
         }
-        .nav-tabs .nav-link.active:hover {
-          color: white !important;
-        }
+        .nav-tabs .nav-link.active:hover { color: white !important; }
         .nav-tabs .nav-link:not(.active):hover {
           border-color: #07255b;
           color: #07255b;
@@ -964,12 +1101,8 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
           background-color: #07255b;
           border-color: #07255b;
         }
-        .modal-header {
-          border-bottom: 2px solid #07255b;
-        }
-        .modal-footer {
-          border-top: 2px solid #07255b;
-        }
+        .modal-header { border-bottom: 2px solid #07255b; }
+        .modal-footer { border-top: 2px solid #07255b; }
       `}</style>
 
       {isSuperAdmin && (
@@ -980,7 +1113,6 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
           <button className="btn btn-info" onClick={() => navigate('/admin/analytics')}>
             <i className="fas fa-chart-line me-1"></i> View Analytics
           </button>
-          {/* 👇 NEW: Scheduler Settings button */}
           <button className="btn btn-theme" onClick={() => navigate('/admin/scheduler')}>
             <i className="fas fa-clock me-1"></i> Scheduler Settings
           </button>
@@ -1034,9 +1166,8 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
       {activeTab === 'users' && isSuperAdmin && renderUsersTab()}
       {activeTab === 'subscribers' && isSuperAdmin && renderSubscribersTab()}
       {activeTab === 'rate-limits' && isSuperAdmin && <RateLimitDashboard isSuperAdmin={isSuperAdmin} />}
-      
-      {/* Modals */}
-      <PostModal 
+
+      <PostModal
         showCreateForm={showCreateForm}
         editingPost={editingPost}
         postForm={postForm}
@@ -1044,15 +1175,21 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
         categories={categories}
         handleImageUpload={handleImageUpload}
         uploadingImage={uploadingImage}
+        handleMultipleImageUpload={handleMultipleImageUpload}
+        uploadingMultiple={uploadingMultiple}
+        images={images}
+        setImages={setImages}
+        removeImage={removeImage}
+        updateImageCaption={updateImageCaption}
+        updateImageAlt={updateImageAlt}
         handleUpdatePost={handleUpdatePost}
         handleCreatePost={handleCreatePost}
         cancelEdit={cancelEdit}
         isUpdating={isUpdating}
         isCreating={isCreating}
         editorKey={editorKey}
-        API_URL={API_URL}
       />
-      
+
       {showUserModal && (
         <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowUserModal(false); }}>
           <div className="modal-content" style={{ width: '500px', maxWidth: '90%' }}>
@@ -1075,4 +1212,4 @@ function AdminPanel({ isSuperAdmin, currentUserId }) {
   );
 }
 
-export default AdminPanel;
+export default AdminPanel; // <-- only ONE export
