@@ -10,7 +10,7 @@ import { Helmet } from 'react-helmet-async';
 import tracking from '../utils/tracking';
 import RelatedPosts from './RelatedPosts';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-import API_URL from '../config'; // <-- IMPORT
+import API_URL from '../config'; // <-- ADDED
 
 // ========== Skeleton Loader ==========
 const Skeleton = () => {
@@ -62,7 +62,7 @@ function AudioPlayer({ content, title }) {
       let plainText = tempDiv.textContent || tempDiv.innerText || '';
       plainText = plainText.replace(/\s+/g, ' ').trim();
       const textToRead = plainText.substring(0, 3000);
-      const response = await axios.post(`${API_URL}/api/tts/speak`,
+      const response = await axios.post(`${API_URL}/api/tts/speak`, 
         { text: textToRead, title: title || 'Article' },
         { responseType: 'blob', withCredentials: true, timeout: 60000 }
       );
@@ -208,7 +208,6 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
       return imagePath;
     }
-    // If it starts with '/', just append to API_URL
     return `${API_URL}${imagePath}`;
   };
 
@@ -242,12 +241,10 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
     return html.replace(/<img /g, '<img loading="lazy" decoding="async" ');
   };
 
-  // ---- Render additional images with captions (robust) ----
+  // ---- Render additional images with captions ----
   const renderContentWithImages = (content, images) => {
     if (!content) return content;
-    if (!images || images.length === 0) {
-      return content;
-    }
+    if (!images || images.length === 0) return content;
 
     let html = content;
     images.forEach((img, index) => {
