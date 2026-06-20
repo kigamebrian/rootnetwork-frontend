@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import API_URL from '../config';
 
 function BlogPage({ isLoggedIn }) {
   const navigate = useNavigate();
@@ -17,22 +18,14 @@ function BlogPage({ isLoggedIn }) {
   const [totalPages, setTotalPages] = useState(1);
   const [totalPosts, setTotalPosts] = useState(0);
   const [postsPerPage] = useState(6);
-  
-  // Newsletter state
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [newsletterStatus, setNewsletterStatus] = useState(null);
-  const [subscribing, setSubscribing] = useState(false);
 
-  // Set document title based on selected category
   const pageTitle = selectedCategoryName ? `${selectedCategoryName} News` : 'Latest News';
   useDocumentTitle(pageTitle, 'RootNetwork');
 
-  // Load categories first, then set selected category from URL
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // When categories load or categorySlug changes, set selected category
   useEffect(() => {
     if (categories.length > 0 && categorySlug) {
       const categoryName = categorySlug.split('-').map(word => 
@@ -57,12 +50,10 @@ function BlogPage({ isLoggedIn }) {
     }
   }, [categories, categorySlug]);
 
-  // Fetch posts when category or page changes
   useEffect(() => {
     fetchPosts();
   }, [selectedCategory, currentPage]);
 
-  // Fetch featured post (only when no category is selected)
   useEffect(() => {
     if (!selectedCategory) {
       fetchFeaturedPost();
@@ -83,8 +74,8 @@ function BlogPage({ isLoggedIn }) {
         params.append('category_id', selectedCategory);
       }
       
-      const url = `http://localhost:5000/api/posts?${params.toString()}`;
-      const response = await axios.get(url);
+      const url = `${API_URL}/api/posts?${params.toString()}`;
+      const response = await axios.get(url, { withCredentials: true });
       
       setPosts(response.data.posts || []);
       setTotalPages(response.data.pages || 1);
@@ -98,7 +89,9 @@ function BlogPage({ isLoggedIn }) {
 
   const fetchFeaturedPost = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/posts?page=1&per_page=1');
+      const response = await axios.get(`${API_URL}/api/posts?page=1&per_page=1`, {
+        withCredentials: true
+      });
       if (response.data.posts && response.data.posts.length > 0) {
         setFeaturedPost(response.data.posts[0]);
       }
@@ -109,7 +102,9 @@ function BlogPage({ isLoggedIn }) {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/categories');
+      const response = await axios.get(`${API_URL}/api/categories`, {
+        withCredentials: true
+      });
       setCategories(response.data || []);
     } catch (error) {
       console.error('Failed to fetch categories', error);
@@ -144,33 +139,10 @@ function BlogPage({ isLoggedIn }) {
     setCurrentPage(1);
   };
 
-  const handleNewsletterSubscribe = async (e) => {
-    e.preventDefault();
-    if (!newsletterEmail) return;
-    
-    setSubscribing(true);
-    setNewsletterStatus(null);
-    
-    try {
-      // If you have a newsletter endpoint
-      // await axios.post('http://localhost:5000/api/subscribe', { email: newsletterEmail });
-      setNewsletterStatus({ type: 'success', message: 'Subscribed successfully! Check your email.' });
-      setNewsletterEmail('');
-      
-      setTimeout(() => {
-        setNewsletterStatus(null);
-      }, 5000);
-    } catch (error) {
-      setNewsletterStatus({ type: 'error', message: 'Failed to subscribe. Please try again.' });
-    } finally {
-      setSubscribing(false);
-    }
-  };
-
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:5000${imagePath}`;
+    return `${API_URL}${imagePath}`;
   };
 
   const getPageNumbers = () => {
@@ -202,7 +174,7 @@ function BlogPage({ isLoggedIn }) {
   if (loading && posts.length === 0) {
     return (
       <div className="container py-5 text-center">
-        <div className="spinner-border text-primary" role="status">
+        <div className="spinner-border" style={{ color: '#07255b' }} role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
       </div>
@@ -211,15 +183,20 @@ function BlogPage({ isLoggedIn }) {
 
   return (
     <div className="container py-5">
-      {/* Featured Post - Shows only when no category is selected */}
+      {/* Featured Post */}
       {featuredPost && !selectedCategory && (
         <div className="row g-5 border-bottom pb-5 mb-5">
           <div className="col-md-6 mb-4">
-            <div className="card overflow-hidden border-0 shadow rounded-4" style={{ cursor: 'pointer' }} onClick={() => handlePostClick(featuredPost.slug)}>
+            <div 
+              className="card overflow-hidden border-0 shadow rounded-4" 
+              style={{ cursor: 'pointer' }} 
+              onClick={() => handlePostClick(featuredPost.slug)}
+            >
               <img
                 src={getImageUrl(featuredPost.image) || "https://mdbcdn.b-cdn.net/img/new/slides/080.webp"}
-                className="card-img-top"
+                className="card-img-top lazy-image"
                 alt={featuredPost.title}
+                loading="lazy"
                 style={{ height: '300px', objectFit: 'cover' }}
                 onError={(e) => {
                   e.target.src = "https://mdbcdn.b-cdn.net/img/new/slides/080.webp";
@@ -228,7 +205,7 @@ function BlogPage({ isLoggedIn }) {
             </div>
           </div>
           <div className="col-md-6 mb-4">
-            <span className="badge bg-danger px-3 py-2 mb-3 rounded-pill">
+            <span className="badge px-3 py-2 mb-3 rounded-pill" style={{ backgroundColor: '#07255b' }}>
               {featuredPost.category?.name || 'Featured Post'}
             </span>
             <h2 className="fw-bold mb-3">{featuredPost.title}</h2>
@@ -241,14 +218,17 @@ function BlogPage({ isLoggedIn }) {
               <i className="far fa-comment ms-3 me-2"></i>
               {featuredPost.comment_count} comments
             </div>
-            <button className="btn btn-dark rounded-pill" onClick={() => handlePostClick(featuredPost.slug)}>
+            <button 
+              className="btn rounded-pill text-white" 
+              style={{ backgroundColor: '#07255b', border: 'none' }}
+              onClick={() => handlePostClick(featuredPost.slug)}
+            >
               Read More →
             </button>
           </div>
         </div>
       )}
 
-      {/* Show message when category is selected */}
       {selectedCategoryName && (
         <div className="alert alert-info mb-4">
           <i className="fas fa-filter me-2"></i>
@@ -263,10 +243,9 @@ function BlogPage({ isLoggedIn }) {
       )}
 
       <div className="row g-5">
-        {/* Main Content */}
         <div className="col-lg-8">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h3 className="fw-bold">
+            <h3 className="fw-bold" style={{ color: '#07255b' }}>
               <i className="fas fa-newspaper me-2"></i>
               {selectedCategoryName ? `${selectedCategoryName} Posts` : 'Latest Posts'}
             </h3>
@@ -292,14 +271,19 @@ function BlogPage({ isLoggedIn }) {
               {posts.map((post, index) => (
                 <div className="col-md-6 mb-4" key={post.id}>
                   <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                    <div className="card-img-top overflow-hidden" style={{ height: '200px', cursor: 'pointer' }} onClick={() => handlePostClick(post.slug)}>
+                    <div 
+                      className="card-img-top overflow-hidden" 
+                      style={{ height: '200px', cursor: 'pointer' }} 
+                      onClick={() => handlePostClick(post.slug)}
+                    >
                       <img
                         src={getImageUrl(post.image) || (index % 2 === 0 
                           ? "https://mdbcdn.b-cdn.net/img/new/standard/city/041.webp"
                           : "https://mdbcdn.b-cdn.net/img/new/standard/city/042.webp")}
-                        className="w-100 h-100"
+                        className="w-100 h-100 lazy-image"
                         style={{ objectFit: 'cover' }}
                         alt={post.title}
+                        loading="lazy"
                         onError={(e) => {
                           e.target.src = index % 2 === 0 
                             ? "https://mdbcdn.b-cdn.net/img/new/standard/city/041.webp"
@@ -335,7 +319,6 @@ function BlogPage({ isLoggedIn }) {
             </div>
           )}
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <nav className="mt-5" aria-label="Blog pagination">
               <ul className="pagination justify-content-center">
@@ -368,6 +351,7 @@ function BlogPage({ isLoggedIn }) {
                     <button 
                       className="page-link" 
                       onClick={() => handlePageChange(page)}
+                      style={currentPage === page ? { backgroundColor: '#07255b', borderColor: '#07255b' } : {}}
                     >
                       {page}
                     </button>
@@ -412,18 +396,17 @@ function BlogPage({ isLoggedIn }) {
           )}
         </div>
 
-        {/* Sidebar */}
         <div className="col-lg-4">
-          {/* Categories */}
           <div className="card border-0 shadow-sm rounded-4 mb-4">
             <div className="card-body">
-              <h5 className="fw-bold mb-3">
+              <h5 className="fw-bold mb-3" style={{ color: '#07255b' }}>
                 <i className="fas fa-folder me-2"></i>
                 Categories
               </h5>
               <div className="list-group">
                 <button
                   className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${!selectedCategory ? 'active' : ''}`}
+                  style={!selectedCategory ? { backgroundColor: '#07255b', borderColor: '#07255b' } : {}}
                   onClick={() => handleCategorySelect(null, null)}
                 >
                   All Posts
@@ -433,6 +416,7 @@ function BlogPage({ isLoggedIn }) {
                   <button
                     key={cat.id}
                     className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${selectedCategory === cat.id ? 'active' : ''}`}
+                    style={selectedCategory === cat.id ? { backgroundColor: '#07255b', borderColor: '#07255b' } : {}}
                     onClick={() => handleCategorySelect(cat.id, cat.name)}
                   >
                     {cat.name}
@@ -443,54 +427,9 @@ function BlogPage({ isLoggedIn }) {
             </div>
           </div>
 
-          {/* Newsletter Subscribe Card */}
-          <div className="card border-0 shadow-sm rounded-4 mb-4">
-            <div className="card-header bg-dark text-white rounded-top-4">
-              <h5 className="mb-0"><i className="fas fa-envelope me-2"></i> Subscribe</h5>
-            </div>
-            <div className="card-body text-center">
-              <p className="text-muted small">Get the latest posts delivered to your inbox</p>
-              <form onSubmit={handleNewsletterSubscribe}>
-                <div className="mb-3">
-                  <input 
-                    type="email" 
-                    className="form-control" 
-                    placeholder="Your email address"
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary w-100"
-                  disabled={subscribing}
-                >
-                  {subscribing ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2"></span>
-                      Subscribing...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-paper-plane me-2"></i>
-                      Subscribe
-                    </>
-                  )}
-                </button>
-              </form>
-              {newsletterStatus && (
-                <div className={`alert alert-${newsletterStatus.type === 'success' ? 'success' : 'danger'} mt-3 mb-0 py-2 small`}>
-                  {newsletterStatus.message}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Recent Posts */}
           <div className="card border-0 shadow-sm rounded-4 mb-4">
             <div className="card-body">
-              <h5 className="fw-bold mb-3">
+              <h5 className="fw-bold mb-3" style={{ color: '#07255b' }}>
                 <i className="fas fa-clock me-2"></i>
                 Recent Posts
               </h5>
@@ -500,9 +439,10 @@ function BlogPage({ isLoggedIn }) {
                     src={getImageUrl(post.image) || (idx === 0 
                       ? "https://mdbcdn.b-cdn.net/img/new/standard/city/031.webp"
                       : "https://mdbcdn.b-cdn.net/img/new/standard/city/032.webp")}
-                    className="rounded me-3"
+                    className="rounded me-3 lazy-image"
                     style={{ width: '60px', height: '60px', objectFit: 'cover' }}
                     alt={post.title}
+                    loading="lazy"
                     onError={(e) => {
                       e.target.src = idx === 0 
                         ? "https://mdbcdn.b-cdn.net/img/new/standard/city/031.webp"
@@ -522,6 +462,32 @@ function BlogPage({ isLoggedIn }) {
           </div>
         </div>
       </div>
+
+      {/* CSS for lazy loading fade-in effect */}
+      <style>{`
+        .lazy-image {
+          opacity: 0;
+          animation: fadeIn 0.6s ease-in forwards;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.98); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Optional: skeleton shimmer while loading – can be added if desired */
+        .lazy-image:not([loaded]) {
+          background: #f0f0f0;
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite, fadeIn 0.6s ease-in forwards;
+        }
+
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </div>
   );
 }

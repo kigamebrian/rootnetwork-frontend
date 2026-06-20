@@ -12,26 +12,30 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import RegisterModal from './components/RegisterModal';
 import LoginModalContent from './components/LoginModalContent';
+import AdminPanel from './components/AdminPanel';
 
 // Pages
 import HomePage from './pages/HomePage';
 import BlogPage from './components/BlogPage';
 import AboutPage from './pages/AboutPage';
-import AdminPanel from './components/AdminPanel';
 import PostDetail from './components/PostDetail';
 import EditPost from './components/EditPost';
 import AnalyticsPage from './components/AnalyticsPage';
 import SecurityDashboard from './components/SecurityDashboard';
 import Profile from './components/Profile';
 import SetupRoute from './pages/SetupRoute';
+import VerifySubscription from './pages/VerifySubscription';
+import AdminSchedulerSettings from './pages/admin/AdminSchedulerSettings';
+import NotFound from './pages/NotFound';
 
 // Hooks & Utils
 import { useAuth } from './hooks/useAuth';
 import tracking from './utils/tracking';
+import API_URL from './config';   // <-- import environment-based URL
 
+// Configure axios
+axios.defaults.baseURL = API_URL;
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
 
 function AppContent() {
   const { isLoggedIn, adminData, loading, handleLogin, handleLogout, fetchAdminData } = useAuth();
@@ -40,9 +44,16 @@ function AppContent() {
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const backgroundLocation = location.state?.backgroundLocation;
   const isHomePage = location.pathname === '/';
+
+  // Redirect direct /login visits (without background state) to home
+  useEffect(() => {
+    if (location.pathname === '/login' && !backgroundLocation) {
+      navigate('/', { replace: true });
+    }
+  }, [location.pathname, backgroundLocation, navigate]);
 
   // Initial check for zero users
   useEffect(() => {
@@ -83,7 +94,7 @@ function AppContent() {
 
   const onLoginSuccess = () => {
     setLoginCreds({ identifier: '', password: '' });
-    navigate(-1); // Close modal and go back
+    navigate(-1);
   };
 
   if (loading || !initialCheckDone) {
@@ -99,21 +110,21 @@ function AppContent() {
   return (
     <div className={isHomePage ? "homepage-container" : "app-container"}>
       <Toaster position="top-right" />
-      
+
       {isHomePage && (
-        <div className="fullscreen-bg" style={{ backgroundImage: `url(http://localhost:5000/static/index.jpg)` }}></div>
+        <div className="fullscreen-bg" style={{ backgroundImage: `url(${API_URL}/static/index.jpg)` }}></div>
       )}
 
       <div className="d-flex flex-column min-vh-100">
-        <Navbar 
+        <Navbar
           isLoggedIn={isLoggedIn}
           adminData={adminData}
           setShowRegister={setShowRegister}
           handleLogout={handleLogout}
         />
 
-        <main className="container" style={{ paddingBottom: '20px', paddingTop: '40px' }}>
-          {/* Main Routes with background support */}
+        <main className="container" style={{ paddingBottom: '50px', paddingTop: '80px' }}>
+          {/* ========== MAIN ROUTES (background content) ========== */}
           <Routes location={backgroundLocation || location}>
             <Route path="/" element={<HomePage adminData={adminData} />} />
             <Route path="/blog" element={<BlogPage isLoggedIn={isLoggedIn} />} />
@@ -126,14 +137,21 @@ function AppContent() {
             <Route path="/admin" element={isLoggedIn ? <AdminPanel isSuperAdmin={adminData?.is_super_admin} currentUserId={adminData?.id} /> : <div className="alert alert-warning">Please login first</div>} />
             <Route path="/admin/analytics" element={isLoggedIn && adminData?.is_super_admin ? <AnalyticsPage isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
             <Route path="/admin/security" element={isLoggedIn && adminData?.is_super_admin ? <SecurityDashboard isSuperAdmin={adminData?.is_super_admin} /> : <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>} />
+            <Route path="/admin/scheduler" element={
+              isLoggedIn && adminData?.is_super_admin ?
+                <AdminSchedulerSettings /> :
+                <div className="alert alert-warning text-center py-5">Access denied. Super admin only.</div>
+            } />
             <Route path="/profile" element={<Profile isLoggedIn={isLoggedIn} adminData={adminData} onUpdate={fetchAdminData} />} />
+            <Route path="/subscribe/verify/:token" element={<VerifySubscription />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
-          
-          {/* Modal Routes */}
+
+          {/* ========== MODAL OVERLAY (only when backgroundLocation exists) ========== */}
           {backgroundLocation && (
             <Routes>
               <Route path="/login" element={
-                <LoginModalContent 
+                <LoginModalContent
                   loginCreds={loginCreds}
                   setLoginCreds={setLoginCreds}
                   handleLogin={(creds, onSuccess) => handleLogin(creds, onSuccess)}
@@ -144,14 +162,14 @@ function AppContent() {
           )}
         </main>
 
-        <Footer 
+        <Footer
           isLoggedIn={isLoggedIn}
           adminData={adminData}
           handleLogout={handleLogout}
         />
       </div>
 
-      <RegisterModal 
+      <RegisterModal
         showRegister={showRegister}
         setShowRegister={setShowRegister}
         onRegisterSuccess={handleRegisterSuccess}

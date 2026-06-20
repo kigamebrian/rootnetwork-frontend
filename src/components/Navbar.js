@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
-// REMOVE the import line - don't import from public folder
+import API_URL from '../config';
 
 function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLogout }) {
   const navigate = useNavigate();
@@ -17,52 +17,45 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
   const [isHovering, setIsHovering] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
   const [dataType, setDataType] = useState('trending');
-  
-  // Scroll state
+
   const [showTopbar, setShowTopbar] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [scrolled, setScrolled] = useState(false);
-  
-  // State for dynamic categories
+
   const [navCategories, setNavCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
-  // Handle scroll events
+  // ---------- SCROLL ----------
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
-      // Hide topbar when scrolling down past 100px, show when scrolling up
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
         setShowTopbar(false);
       } else if (currentScrollY < lastScrollY) {
         setShowTopbar(true);
       }
-      
-      // Add shadow to navbar when scrolled
       setScrolled(currentScrollY > 50);
       setLastScrollY(currentScrollY);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // Fetch trending news from API
+  // ---------- FETCH TRENDING ----------
   useEffect(() => {
     fetchTrendingNews();
     const refreshInterval = setInterval(fetchTrendingNews, 2 * 60 * 1000);
     return () => clearInterval(refreshInterval);
   }, []);
 
-  // Fetch categories for navigation
+  // ---------- FETCH CATEGORIES ----------
   useEffect(() => {
     fetchNavCategories();
   }, []);
 
   const fetchNavCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/nav-categories', {
+      const response = await axios.get(`${API_URL}/api/nav-categories`, {
         withCredentials: true
       });
       setNavCategories(response.data);
@@ -73,26 +66,22 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     }
   };
 
-  // Auto-rotate trending news (3 seconds)
+  // ---------- TRENDING ROTATION ----------
   useEffect(() => {
     if (trendingData.length === 0 || isHovering) return;
-    
     const interval = setInterval(() => {
       setTrendingIndex((prev) => (prev + 1) % trendingData.length);
       setAnimationKey(prev => prev + 1);
     }, 3000);
-    
     return () => clearInterval(interval);
   }, [trendingData, isHovering]);
 
   const fetchTrendingNews = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/trending', {
+      const response = await axios.get(`${API_URL}/api/trending`, {
         withCredentials: true
       });
-      
       const result = response.data;
-      
       if (result.type === 'weather') {
         setDataType('weather');
         const weatherArray = Array.isArray(result.data) ? result.data : [result.data];
@@ -101,7 +90,6 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         setDataType('trending');
         setTrendingData(result.data || []);
       }
-      
       setTrendingIndex(0);
       setLoadingTrending(false);
     } catch (error) {
@@ -125,16 +113,9 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
   };
 
   const renderCurrentContent = () => {
-    if (loadingTrending) {
-      return "Loading...";
-    }
-    
-    if (trendingData.length === 0) {
-      return "Welcome to RootNetwork!";
-    }
-    
+    if (loadingTrending) return "Loading...";
+    if (trendingData.length === 0) return "Welcome to RootNetwork!";
     const item = trendingData[trendingIndex];
-    
     if (dataType === 'weather') {
       return (
         <span>
@@ -153,28 +134,14 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     return "Trending Now:";
   };
 
+  // ---------- REGISTRATION STATUS ----------
   useEffect(() => {
     checkRegistrationStatus();
   }, []);
 
-  useEffect(() => {
-    setImageError(false);
-    if (adminData?.profile_image) {
-      if (adminData.profile_image.startsWith('http')) {
-        setProfileImageUrl(adminData.profile_image);
-      } else if (adminData.profile_image && adminData.profile_image !== 'default-avatar.png') {
-        setProfileImageUrl(`http://localhost:5000/static/${adminData.profile_image}`);
-      } else {
-        setProfileImageUrl(null);
-      }
-    } else {
-      setProfileImageUrl(null);
-    }
-  }, [adminData]);
-
   const checkRegistrationStatus = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/check-registration-status', {
+      const response = await axios.get(`${API_URL}/api/check-registration-status`, {
         withCredentials: true
       });
       setRegistrationOpen(response.data.registration_open);
@@ -183,13 +150,25 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     }
   };
 
+  // ---------- PROFILE IMAGE ----------
+  useEffect(() => {
+    setImageError(false);
+    if (adminData?.profile_image) {
+      if (adminData.profile_image.startsWith('http')) {
+        setProfileImageUrl(adminData.profile_image);
+      } else if (adminData.profile_image && adminData.profile_image !== 'default-avatar.png') {
+        setProfileImageUrl(`${API_URL}/static/${adminData.profile_image}`);
+      } else {
+        setProfileImageUrl(null);
+      }
+    } else {
+      setProfileImageUrl(null);
+    }
+  }, [adminData]);
+
   const getUserInitial = () => {
-    if (adminData?.full_name) {
-      return adminData.full_name.charAt(0).toUpperCase();
-    }
-    if (adminData?.username) {
-      return adminData.username.charAt(0).toUpperCase();
-    }
+    if (adminData?.full_name) return adminData.full_name.charAt(0).toUpperCase();
+    if (adminData?.username) return adminData.username.charAt(0).toUpperCase();
     return 'U';
   };
 
@@ -198,59 +177,61 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
     setProfileImageUrl(null);
   };
 
-  const isCategoryActive = (categoryName) => {
-    const expectedSlug = categoryName.toLowerCase().replace(/\s+/g, '-');
-    return location.pathname === `/category/${expectedSlug}`;
+  // ---------- CATEGORY ACTIVE ----------
+  const isCategoryActive = (slug) => {
+    return location.pathname === `/category/${slug}`;
   };
 
   return (
     <>
-      {/* Topbar with Trending News / Weather - Hides on scroll down */}
+      {/* ========== TOPBAR ========== */}
       {showTopbar && (
         <div className="topbar bg-dark text-white py-2">
           <div className="container">
-            <div className="d-flex align-items-center justify-content-between flex-wrap">
-              <div className="d-flex align-items-center gap-2">
-                <span className="text-uppercase text-danger me-2 fw-bold">
+            <div className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-1 gap-sm-0">
+              {/* LEFT: Trending / Weather (always visible) */}
+              <div className="d-flex align-items-center gap-2 flex-wrap justify-content-center justify-content-sm-start">
+                <span className="text-uppercase text-danger me-1 fw-bold small" style={{ fontSize: '0.75rem' }}>
                   {getLabelText()}
                 </span>
-                
                 {!loadingTrending && trendingData.length > 0 ? (
-                  <div 
-                    className="d-flex align-items-center gap-2"
+                  <div
+                    className="d-flex align-items-center gap-1"
                     onMouseEnter={() => setIsHovering(true)}
                     onMouseLeave={() => setIsHovering(false)}
                   >
-                    <button 
+                    <button
                       onClick={prevTrending}
-                      className="btn btn-link text-white p-0 me-1"
+                      className="btn btn-link text-white p-0"
                       style={{ fontSize: '12px', textDecoration: 'none' }}
                     >
                       <i className="fas fa-chevron-left"></i>
                     </button>
-                    
-                    <span 
+                    <span
                       key={animationKey}
-                      className="trending-text"
+                      className="trending-text text-center"
                       style={{
                         display: 'inline-block',
                         animation: 'fadeInOut 0.5s ease',
-                        minWidth: '300px'
+                        minWidth: '80px',
+                        maxWidth: '200px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        fontSize: '0.85rem',
                       }}
                     >
                       {renderCurrentContent()}
                     </span>
-                    
-                    <button 
+                    <button
                       onClick={nextTrending}
-                      className="btn btn-link text-white p-0 ms-1"
+                      className="btn btn-link text-white p-0"
                       style={{ fontSize: '12px', textDecoration: 'none' }}
                     >
                       <i className="fas fa-chevron-right"></i>
                     </button>
-                    
                     {trendingData.length > 1 && (
-                      <div className="d-flex gap-1 ms-2">
+                      <div className="d-none d-sm-flex gap-1 ms-2">
                         {trendingData.map((_, idx) => (
                           <button
                             key={idx}
@@ -266,20 +247,21 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                     )}
                   </div>
                 ) : (
-                  <span className="trending-text text-muted">
+                  <span className="trending-text text-muted small">
                     {!loadingTrending && 'No updates at the moment'}
                   </span>
                 )}
               </div>
-              
-              <div className="d-flex gap-3 mt-2 mt-sm-0">
-                <span><i className="fas fa-map-marker-alt me-1"></i> Worldwide</span>
-                <Link to="/about" className="text-white text-decoration-none">About</Link>
-                <Link to="/contact" className="text-white text-decoration-none">Contact</Link>
+
+              {/* RIGHT: Worldwide, About, Contact, Socials – hidden on mobile */}
+              <div className="d-none d-sm-flex flex-wrap align-items-center justify-content-center gap-2 gap-sm-3">
+                <span className="small"><i className="fas fa-map-marker-alt me-1"></i> Worldwide</span>
+                <Link to="/about" className="text-white text-decoration-none small">About</Link>
+                <Link to="/contact" className="text-white text-decoration-none small">Contact</Link>
                 <div className="d-flex gap-2">
-                  <a href="#" className="text-white"><i className="fab fa-facebook-f"></i></a>
-                  <a href="#" className="text-white"><i className="fab fa-twitter"></i></a>
-                  <a href="#" className="text-white"><i className="fab fa-youtube"></i></a>
+                  <a href="#" className="text-white small"><i className="fab fa-facebook-f"></i></a>
+                  <a href="#" className="text-white small"><i className="fab fa-twitter"></i></a>
+                  <a href="#" className="text-white small"><i className="fab fa-youtube"></i></a>
                 </div>
               </div>
             </div>
@@ -287,89 +269,83 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
         </div>
       )}
 
-      {/* Main Navbar - Sticky at top */}
+      {/* ========== MAIN NAVBAR ========== */}
       <nav className={`navbar navbar-expand-lg navbar-light bg-white main-navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container">
-          {/* USE DIRECT PATH FROM PUBLIC FOLDER - NO IMPORT NEEDED */}
-          <a 
-            className="navbar-brand" 
-            href="#" 
+          <a
+            className="navbar-brand"
+            href="#"
             onClick={(e) => { e.preventDefault(); navigate('/'); }}
             style={{ padding: '0' }}
           >
-            <img 
-              src="/RootNetwork-logo.svg" 
-              alt="RootNetwork" 
-              style={{ 
-                height: '50px', 
-                width: 'auto',
-                maxWidth: '200px'
-              }} 
+            <img
+              src="/RootNetwork-logo.svg"
+              alt="RootNetwork"
+              style={{ height: '50px', width: 'auto', maxWidth: '200px' }}
             />
           </a>
-          
-          <button 
-            className="navbar-toggler" 
-            type="button" 
+
+          <button
+            className="navbar-toggler"
+            type="button"
             onClick={() => setIsOpen(!isOpen)}
           >
             <span className="navbar-toggler-icon"></span>
           </button>
-          
+
           <div className={`collapse navbar-collapse ${isOpen ? 'show' : ''}`}>
             <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
               <li className="nav-item">
-                <a 
-                  className={`nav-link ${location.pathname === '/' ? 'active fw-bold' : ''}`} 
+                <a
+                  className={`nav-link ${location.pathname === '/' ? 'active fw-bold' : ''}`}
                   href="#"
                   onClick={(e) => { e.preventDefault(); navigate('/'); }}
                 >
                   <i className="fas fa-home me-1"></i> Home
                 </a>
               </li>
-              
-              {/* Dynamic Categories */}
-              {!loadingCategories && navCategories.map((category) => (
-                <li className="nav-item" key={category.id}>
-                  <a 
-                    className={`nav-link ${isCategoryActive(category.name) ? 'active fw-bold' : ''}`}
-                    href="#"
-                    onClick={(e) => { 
-                      e.preventDefault(); 
-                      navigate(`/category/${category.slug}`);
-                    }}
-                  >
-                    {category.name}
-                  </a>
-                </li>
-              ))}
-              
-              {/* Latest Link (instead of All Posts) */}
+
+              {!loadingCategories &&
+                navCategories.map((category) => (
+                  <li className="nav-item" key={category.id}>
+                    <a
+                      className={`nav-link ${isCategoryActive(category.slug) ? 'active fw-bold' : ''}`}
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/category/${category.slug}`);
+                      }}
+                    >
+                      {category.name}
+                    </a>
+                  </li>
+                ))}
+
               <li className="nav-item">
-                <a 
-                  className={`nav-link ${location.pathname === '/blog' ? 'active fw-bold' : ''}`} 
+                <a
+                  className={`nav-link ${location.pathname === '/blog' ? 'active fw-bold' : ''}`}
                   href="#"
                   onClick={(e) => { e.preventDefault(); navigate('/blog'); }}
                 >
-                  <i className=""></i> Latest
+                  Latest
                 </a>
               </li>
-              
+
               <li className="nav-item">
-                <a 
-                  className={`nav-link ${location.pathname === '/about' ? 'active fw-bold' : ''}`} 
+                <a
+                  className={`nav-link ${location.pathname === '/about' ? 'active fw-bold' : ''}`}
                   href="#"
                   onClick={(e) => { e.preventDefault(); navigate('/about'); }}
                 >
-                  <i className=""></i> About
+                  About
                 </a>
               </li>
-              
+
               {isLoggedIn && (
                 <li className="nav-item dropdown">
-                  <a 
-                    className="nav-link dropdown-toggle" 
-                    href="#" 
+                  <a
+                    className="nav-link dropdown-toggle"
+                    href="#"
                     role="button"
                     data-bs-toggle="dropdown"
                   >
@@ -377,43 +353,56 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                   </a>
                   <ul className="dropdown-menu">
                     <li>
-                      <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); navigate('/admin'); }}>
+                      <a
+                        className="dropdown-item"
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); navigate('/admin'); }}
+                      >
                         <i className="fas fa-tachometer-alt me-2"></i> Dashboard
                       </a>
                     </li>
                     <li>
-                      <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); navigate('/admin/create'); }}>
+                      <a
+                        className="dropdown-item"
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); navigate('/admin/create'); }}
+                      >
                         <i className="fas fa-plus-circle me-2"></i> New Post
                       </a>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
                     <li>
-                      <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); navigate('/profile'); }}>
+                      <a
+                        className="dropdown-item"
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); navigate('/profile'); }}
+                      >
                         <i className="fas fa-user-circle me-2"></i> Profile
                       </a>
                     </li>
                   </ul>
                 </li>
               )}
-              
+
+              {/* ===== USER AVATAR – NO LOGIN/LOGOUT BUTTONS ===== */}
               <li className="nav-item ms-lg-2 mt-2 mt-lg-0">
                 {isLoggedIn ? (
                   <div className="d-flex align-items-center gap-2">
-                    <div 
-                      className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white"
-                      style={{ 
-                        width: '36px', 
-                        height: '36px', 
+                    <div
+                      className="rounded-circle d-flex align-items-center justify-content-center text-white"
+                      style={{
+                        width: '36px',
+                        height: '36px',
                         cursor: 'pointer',
                         overflow: 'hidden',
-                        backgroundColor: (!profileImageUrl || imageError) ? '#667eea' : 'transparent'
+                        backgroundColor: (!profileImageUrl || imageError) ? '#07255b' : 'transparent',
                       }}
                       onClick={() => navigate('/profile')}
                     >
                       {profileImageUrl && !imageError ? (
-                        <img 
+                        <img
                           src={profileImageUrl}
-                          alt="Profile" 
+                          alt="Profile"
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           onError={handleImageError}
                         />
@@ -423,17 +412,10 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
                         </span>
                       )}
                     </div>
-                    
                     <span className="badge bg-secondary px-3 py-2 rounded-pill">
                       <i className="fas fa-user-circle me-1"></i> {adminData?.username}
                     </span>
-                    
-                    <button 
-                      className="btn btn-outline-danger btn-sm rounded-pill px-3"
-                      onClick={handleLogout}
-                    >
-                      <i className="fas fa-sign-out-alt me-1"></i> Logout
-                    </button>
+                    {/* ===== LOGOUT BUTTON REMOVED ===== */}
                   </div>
                 ) : null}
               </li>
@@ -450,11 +432,7 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
           80% { opacity: 1; }
           100% { opacity: 0; transform: translateY(-5px); }
         }
-        
-        .trending-text {
-          display: inline-block;
-        }
-        
+        .trending-text { display: inline-block; }
         .topbar button {
           background: transparent;
           border: none;
@@ -462,31 +440,19 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
           cursor: pointer;
           transition: opacity 0.3s ease;
         }
-        
-        .topbar button:hover {
-          opacity: 0.7;
-        }
-        
+        .topbar button:hover { opacity: 0.7; }
         .nav-link.active {
-          color: #e74c3c !important;
-          border-bottom: 2px solid #e74c3c;
+          color: #07255b !important;
+          border-bottom: 2px solid #07255b;
         }
-        
-        .nav-link {
-          transition: all 0.3s ease;
-        }
-        
-        .nav-link:hover {
-          color: #e74c3c !important;
-        }
-        
-        /* Sticky Navbar Styles */
+        .nav-link { transition: all 0.3s ease; }
+        .nav-link:hover { color: #07255b !important; }
+        .bg-theme { background-color: #07255b !important; }
         .topbar {
           position: relative;
           z-index: 999;
           transition: transform 0.3s ease, opacity 0.3s ease;
         }
-        
         .main-navbar {
           position: sticky;
           top: 0;
@@ -494,18 +460,31 @@ function Navbar({ isLoggedIn, adminData, setShowLogin, setShowRegister, handleLo
           background: white;
           transition: box-shadow 0.3s ease;
         }
-        
         .main-navbar.scrolled {
           box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
-        
-        /* Logo hover effect */
         .navbar-brand img {
           transition: transform 0.3s ease;
         }
-        
         .navbar-brand img:hover {
           transform: scale(1.05);
+        }
+        @media (max-width: 576px) {
+          .topbar .trending-text {
+            font-size: 0.75rem;
+            min-width: 60px;
+            max-width: 140px;
+          }
+          .topbar .small {
+            font-size: 0.65rem;
+          }
+          .topbar .gap-2 {
+            gap: 0.25rem !important;
+          }
+          .topbar .py-2 {
+            padding-top: 0.3rem !important;
+            padding-bottom: 0.3rem !important;
+          }
         }
       `}</style>
     </>

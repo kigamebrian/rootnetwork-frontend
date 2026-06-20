@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import API_URL from '../config'; // Add this import
 
 function RelatedPosts({ postId, currentPostSlug }) {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ function RelatedPosts({ postId, currentPostSlug }) {
   const fetchRelatedPosts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:5000/api/posts/${postId}/related`);
+      const response = await axios.get(`${API_URL}/api/posts/${postId}/related`);
       setRelatedPosts(response.data);
     } catch (error) {
       console.error('Failed to fetch related posts:', error);
@@ -89,7 +90,7 @@ function RelatedPosts({ postId, currentPostSlug }) {
                 {post.image && (
                   <div className="position-relative overflow-hidden" style={{ height: '160px' }}>
                     <img 
-                      src={post.image.startsWith('http') ? post.image : `http://localhost:5000${post.image}`}
+                      src={post.image.startsWith('http') ? post.image : `${API_URL}${post.image}`}
                       className="card-img-top w-100 h-100"
                       alt={post.title}
                       style={{ objectFit: 'cover', transition: 'transform 0.3s ease' }}

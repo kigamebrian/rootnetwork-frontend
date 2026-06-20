@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
 import DataTable from './DataTable';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import API_URL from '../config';
 
 function Profile({ isLoggedIn, adminData, onUpdate }) {
   useDocumentTitle('Profile', 'RootNetwork');
@@ -37,7 +38,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
   const fetchUserProfile = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/user/profile', {
+      const response = await axios.get(`${API_URL}/api/user/profile`, {
         withCredentials: true,
         params: { page: currentPage, per_page: 10 }
       });
@@ -92,7 +93,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
 
     setUploadingImage(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/upload-profile-image', uploadData, {
+      const response = await axios.post(`${API_URL}/api/upload-profile-image`, uploadData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true
       });
@@ -132,7 +133,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
         updateData.password = formData.password;
       }
       
-      await axios.put('http://localhost:5000/api/user/profile', updateData, {
+      await axios.put(`${API_URL}/api/user/profile`, updateData, {
         withCredentials: true
       });
       
@@ -179,6 +180,45 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
 
   return (
     <div className="container py-4">
+      <style>{`
+        .btn-theme {
+          background-color: #07255b;
+          border-color: #07255b;
+          color: white;
+        }
+        .btn-theme:hover {
+          background-color: #0a3a8a;
+          border-color: #0a3a8a;
+          color: white;
+        }
+        .btn-outline-theme {
+          color: #07255b;
+          border-color: #07255b;
+        }
+        .btn-outline-theme:hover {
+          background-color: #07255b;
+          color: white;
+        }
+        .text-theme {
+          color: #07255b !important;
+        }
+        .border-theme {
+          border-color: #07255b !important;
+        }
+        .form-control:focus {
+          border-color: #07255b;
+          box-shadow: 0 0 0 0.2rem rgba(7, 37, 91, 0.25);
+        }
+        .btn-secondary {
+          background-color: #6c757d;
+          border-color: #6c757d;
+        }
+        .btn-secondary:hover {
+          background-color: #5a6268;
+          border-color: #545b62;
+        }
+      `}</style>
+
       {/* Header with Back Button */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <button 
@@ -189,7 +229,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
         </button>
         {profileData?.is_super_admin && (
           <button 
-            className="btn btn-primary" 
+            className="btn btn-theme" 
             onClick={() => navigate('/admin')}
           >
             <i className="fas fa-tachometer-alt me-1"></i> Go to Admin Panel
@@ -205,12 +245,16 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
               <div className="mb-3">
                 {profileData?.profile_image && profileData.profile_image !== 'default-avatar.png' ? (
                   <img
-                    src={`http://localhost:5000/static/${profileData.profile_image}`}
+                    src={
+                      profileData.profile_image.startsWith('http')
+                        ? profileData.profile_image
+                        : `${API_URL}/static/${profileData.profile_image}`
+                    }
                     alt="Profile"
                     className="rounded-circle"
-                    style={{ width: '150px', height: '150px', objectFit: 'cover', border: '3px solid #667eea' }}
+                    style={{ width: '150px', height: '150px', objectFit: 'cover', border: '3px solid #07255b' }}
                     onError={(e) => {
-                      e.target.src = 'http://localhost:5000/static/default-avatar.png';
+                      e.target.src = `${API_URL}/static/default-avatar.png`;
                     }}
                   />
                 ) : (
@@ -219,10 +263,10 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
                   </div>
                 )}
               </div>
-              <h4 className="mb-1">{profileData?.full_name || profileData?.username}</h4>
+              <h4 className="mb-1 text-theme">{profileData?.full_name || profileData?.username}</h4>
               <p className="text-muted">@{profileData?.username}</p>
               <div className="mt-3">
-                <label className="btn btn-outline-primary btn-sm">
+                <label className="btn btn-outline-theme btn-sm">
                   <i className="fas fa-camera me-1"></i> Change Avatar
                   <input
                     type="file"
@@ -244,7 +288,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
           {/* Account Info Card */}
           <div className="card shadow-sm mt-4">
             <div className="card-body">
-              <h5 className="card-title">
+              <h5 className="card-title text-theme">
                 <i className="fas fa-info-circle me-2"></i>
                 Account Info
               </h5>
@@ -276,7 +320,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
         <div className="col-md-8">
           <div className="card shadow-sm mb-4">
             <div className="card-body">
-              <h4 className="card-title mb-4">
+              <h4 className="card-title mb-4 text-theme">
                 <i className="fas fa-user-edit me-2"></i>
                 Edit Profile
               </h4>
@@ -355,7 +399,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
                 </div>
                 
                 <hr className="my-4" />
-                <h5 className="mb-3">
+                <h5 className="mb-3 text-theme">
                   <i className="fas fa-key me-2"></i>
                   Change Password
                 </h5>
@@ -386,7 +430,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
                 </div>
                 
                 <div className="d-flex gap-2 mt-4">
-                  <button type="submit" className="btn btn-primary" disabled={loading}>
+                  <button type="submit" className="btn btn-theme" disabled={loading}>
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -412,7 +456,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
           {userPosts.length > 0 && (
             <div className="card shadow-sm">
               <div className="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">
+                <h5 className="mb-0 text-theme">
                   <i className="fas fa-pen-alt me-2"></i>
                   My Posts
                 </h5>
@@ -461,7 +505,7 @@ function Profile({ isLoggedIn, adminData, onUpdate }) {
                 <p className="text-muted">You haven't written any posts yet.</p>
                 {profileData?.is_super_admin && (
                   <button 
-                    className="btn btn-primary"
+                    className="btn btn-theme"
                     onClick={() => navigate('/admin')}
                   >
                     <i className="fas fa-plus me-1"></i> Create Your First Post

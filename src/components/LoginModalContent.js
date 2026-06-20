@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config'; // Add this import
 
 function LoginModalContent({ loginCreds, setLoginCreds, handleLogin, onClose }) {
   const [checking, setChecking] = useState(true);
@@ -14,7 +15,7 @@ function LoginModalContent({ loginCreds, setLoginCreds, handleLogin, onClose }) 
 
   const checkDatabase = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/check-registration-status', {
+      const response = await axios.get(`${API_URL}/api/check-registration-status`, {
         withCredentials: true
       });
       
