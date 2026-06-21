@@ -356,7 +356,7 @@ function PostDetail({ isLoggedIn, adminData, currentUserId, isSuperAdmin }) {
   const keywords = post.keywords || `${post.title}, blog, article, news`;
   const tags = keywords.split(',').map(tag => tag.trim()).filter(t => t);
 
-  const DEFAULT_OG_IMAGE = `${API_URL}/static/og-default.jpg`;
+  const DEFAULT_OG_IMAGE = 'https://res-console.cloudinary.com/dt2yse3jf/thumbnails/v1/image/upload/v1782030371/b2ctZGVmYXVsdF9sMWNsZms=/drilldown';
   const ogImage = post.image ? getImageUrl(post.image) : DEFAULT_OG_IMAGE;
   const ogImageAlt = post.title;
   const ogUrl = window.location.href;
