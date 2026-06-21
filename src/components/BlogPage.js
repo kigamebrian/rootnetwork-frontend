@@ -1,5 +1,5 @@
 // frontend/src/components/BlogPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import useDocumentTitle from '../hooks/useDocumentTitle';
@@ -14,18 +14,26 @@ function BlogPage({ isLoggedIn }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalPosts, setTotalPosts] = useState(0);
-  const [postsPerPage] = useState(6);
+  const [hasMore, setHasMore] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const postsPerPage = 6;
+
+  const sentinelRef = useRef(null);
+  const observerRef = useRef(null);
 
   const pageTitle = selectedCategoryName ? `${selectedCategoryName} News` : 'Latest News';
   useDocumentTitle(pageTitle, 'RootNetwork');
 
+  // ---- Fetch categories ----
   useEffect(() => {
     fetchCategories();
   }, []);
 
+  // ---- Handle category change from URL ----
   useEffect(() => {
     if (categories.length > 0 && categorySlug) {
       const categoryName = categorySlug.split('-').map(word => 
@@ -39,21 +47,29 @@ function BlogPage({ isLoggedIn }) {
       if (category) {
         setSelectedCategory(category.id);
         setSelectedCategoryName(category.name);
-        setCurrentPage(1);
+        resetAndFetch();
       } else {
         setSelectedCategory(null);
         setSelectedCategoryName(null);
+        resetAndFetch();
       }
     } else if (!categorySlug) {
       setSelectedCategory(null);
       setSelectedCategoryName(null);
+      resetAndFetch();
     }
   }, [categories, categorySlug]);
 
-  useEffect(() => {
-    fetchPosts();
-  }, [selectedCategory, currentPage]);
+  // ---- Reset and fetch first page ----
+  const resetAndFetch = () => {
+    setPosts([]);
+    setCurrentPage(1);
+    setHasMore(true);
+    setInitialLoadDone(false);
+    fetchPosts(1, true);
+  };
 
+  // ---- Fetch featured post (only when no category) ----
   useEffect(() => {
     if (!selectedCategory) {
       fetchFeaturedPost();
@@ -62,11 +78,22 @@ function BlogPage({ isLoggedIn }) {
     }
   }, [selectedCategory]);
 
-  const fetchPosts = async () => {
-    setLoading(true);
+  // ---- Fetch posts with pagination (append or replace) ----
+  const fetchPosts = async (page, replace = false) => {
+    if (page > totalPages && totalPages > 0) {
+      setHasMore(false);
+      return;
+    }
+
+    if (replace) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
       const params = new URLSearchParams({
-        page: currentPage,
+        page: page,
         per_page: postsPerPage
       });
       
@@ -77,16 +104,30 @@ function BlogPage({ isLoggedIn }) {
       const url = `${API_URL}/api/posts?${params.toString()}`;
       const response = await axios.get(url, { withCredentials: true });
       
-      setPosts(response.data.posts || []);
-      setTotalPages(response.data.pages || 1);
-      setTotalPosts(response.data.total || 0);
+      const newPosts = response.data.posts || [];
+      const total = response.data.total || 0;
+      const pages = response.data.pages || 1;
+
+      setTotalPosts(total);
+      setTotalPages(pages);
+      setHasMore(page < pages);
+
+      if (replace) {
+        setPosts(newPosts);
+      } else {
+        setPosts(prev => [...prev, ...newPosts]);
+      }
+
+      setCurrentPage(page);
     } catch (error) {
       console.error('Failed to fetch posts', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
+  // ---- Featured post fetch ----
   const fetchFeaturedPost = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/posts?page=1&per_page=1`, {
@@ -100,6 +141,7 @@ function BlogPage({ isLoggedIn }) {
     }
   };
 
+  // ---- Categories fetch ----
   const fetchCategories = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/categories`, {
@@ -111,13 +153,56 @@ function BlogPage({ isLoggedIn }) {
     }
   };
 
-  const handlePostClick = (slug) => {
-    navigate(`/blog/post/${slug}`);
+  // ---- IntersectionObserver for infinite scroll ----
+  useEffect(() => {
+    if (loading || !hasMore || loadingMore) return;
+
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          const nextPage = currentPage + 1;
+          if (nextPage <= totalPages) {
+            fetchPosts(nextPage, false);
+          } else {
+            setHasMore(false);
+          }
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sentinelRef.current) {
+      observerRef.current.observe(sentinelRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [loading, hasMore, loadingMore, currentPage, totalPages]);
+
+  // ---- Initial load ----
+  useEffect(() => {
+    if (!initialLoadDone && !loading) {
+      // Initial load already triggered by resetAndFetch
+      setInitialLoadDone(true);
+    }
+  }, [loading, initialLoadDone]);
+
+  // ---- Helpers ----
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_URL}${imagePath}`;
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handlePostClick = (slug) => {
+    navigate(`/blog/post/${slug}`);
   };
 
   const handleCategorySelect = (categoryId, categoryName) => {
@@ -125,7 +210,7 @@ function BlogPage({ isLoggedIn }) {
       navigate('/blog');
       setSelectedCategory(null);
       setSelectedCategoryName(null);
-      setCurrentPage(1);
+      resetAndFetch();
     } else {
       const slug = categoryName.toLowerCase().replace(/\s+/g, '-');
       navigate(`/category/${slug}`);
@@ -136,39 +221,7 @@ function BlogPage({ isLoggedIn }) {
     navigate('/blog');
     setSelectedCategory(null);
     setSelectedCategoryName(null);
-    setCurrentPage(1);
-  };
-
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    if (imagePath.startsWith('http')) return imagePath;
-    return `${API_URL}${imagePath}`;
-  };
-
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxPagesToShow = 5;
-    
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= maxPagesToShow; i++) {
-          pages.push(i);
-        }
-      } else if (currentPage >= totalPages - 2) {
-        for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
-          pages.push(i);
-        }
-      }
-    }
-    return pages;
+    resetAndFetch();
   };
 
   if (loading && posts.length === 0) {
@@ -319,83 +372,27 @@ function BlogPage({ isLoggedIn }) {
             </div>
           )}
 
-          {totalPages > 1 && (
-            <nav className="mt-5" aria-label="Blog pagination">
-              <ul className="pagination justify-content-center">
-                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                  <button 
-                    className="page-link" 
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <i className="fas fa-chevron-left me-1"></i>
-                    Previous
-                  </button>
-                </li>
-                
-                {getPageNumbers()[0] > 1 && (
-                  <>
-                    <li className="page-item">
-                      <button className="page-link" onClick={() => handlePageChange(1)}>1</button>
-                    </li>
-                    {getPageNumbers()[0] > 2 && (
-                      <li className="page-item disabled">
-                        <span className="page-link">...</span>
-                      </li>
-                    )}
-                  </>
-                )}
-                
-                {getPageNumbers().map(page => (
-                  <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
-                    <button 
-                      className="page-link" 
-                      onClick={() => handlePageChange(page)}
-                      style={currentPage === page ? { backgroundColor: '#07255b', borderColor: '#07255b' } : {}}
-                    >
-                      {page}
-                    </button>
-                  </li>
-                ))}
-                
-                {getPageNumbers()[getPageNumbers().length - 1] < totalPages && (
-                  <>
-                    {getPageNumbers()[getPageNumbers().length - 1] < totalPages - 1 && (
-                      <li className="page-item disabled">
-                        <span className="page-link">...</span>
-                      </li>
-                    )}
-                    <li className="page-item">
-                      <button className="page-link" onClick={() => handlePageChange(totalPages)}>
-                        {totalPages}
-                      </button>
-                    </li>
-                  </>
-                )}
-                
-                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                  <button 
-                    className="page-link" 
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                    <i className="fas fa-chevron-right ms-1"></i>
-                  </button>
-                </li>
-              </ul>
-            </nav>
+          {/* Infinite Scroll Sentinel */}
+          {hasMore && posts.length > 0 && (
+            <div ref={sentinelRef} className="text-center py-4">
+              {loadingMore ? (
+                <div className="spinner-border" style={{ color: '#07255b', width: '2rem', height: '2rem' }} role="status">
+                  <span className="visually-hidden">Loading more...</span>
+                </div>
+              ) : (
+                <span className="text-muted small">Scroll for more</span>
+              )}
+            </div>
           )}
-          
-          {totalPages > 1 && (
-            <div className="text-center mt-3">
-              <small className="text-muted">
-                Page {currentPage} of {totalPages} ({totalPosts} total posts)
-              </small>
+
+          {!hasMore && posts.length > 0 && (
+            <div className="text-center py-4">
+              <small className="text-muted">You've reached the end 🎉</small>
             </div>
           )}
         </div>
 
+        {/* Sidebar */}
         <div className="col-lg-4">
           <div className="card border-0 shadow-sm rounded-4 mb-4">
             <div className="card-body">
@@ -463,7 +460,6 @@ function BlogPage({ isLoggedIn }) {
         </div>
       </div>
 
-      {/* CSS for lazy loading fade-in effect */}
       <style>{`
         .lazy-image {
           opacity: 0;
@@ -475,7 +471,6 @@ function BlogPage({ isLoggedIn }) {
           to { opacity: 1; transform: scale(1); }
         }
 
-        /* Optional: skeleton shimmer while loading – can be added if desired */
         .lazy-image:not([loaded]) {
           background: #f0f0f0;
           background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
