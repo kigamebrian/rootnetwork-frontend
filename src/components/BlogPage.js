@@ -387,7 +387,7 @@ function BlogPage({ isLoggedIn }) {
 
           {!hasMore && posts.length > 0 && (
             <div className="text-center py-4">
-              <small className="text-muted">You've reached the end 🎉</small>
+              <small className="text-muted"> end..</small>
             </div>
           )}
         </div>
