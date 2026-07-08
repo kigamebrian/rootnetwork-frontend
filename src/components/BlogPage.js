@@ -36,13 +36,8 @@ function BlogPage({ isLoggedIn }) {
   // ---- Handle category change from URL ----
   useEffect(() => {
     if (categories.length > 0 && categorySlug) {
-      const categoryName = categorySlug.split('-').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ');
-      
-      const category = categories.find(c => 
-        c.name.toLowerCase() === categoryName.toLowerCase()
-      );
+      // 👇 FIND CATEGORY BY SLUG (from API)
+      const category = categories.find(c => c.slug === categorySlug);
       
       if (category) {
         setSelectedCategory(category.id);
@@ -153,6 +148,26 @@ function BlogPage({ isLoggedIn }) {
     }
   };
 
+  // ---- Category selection handler ----
+  const handleCategorySelect = (categoryId, categoryName, categorySlug) => {
+    if (categoryId === null) {
+      navigate('/blog');
+      setSelectedCategory(null);
+      setSelectedCategoryName(null);
+      resetAndFetch();
+    } else {
+      navigate(`/category/${categorySlug}`);
+    }
+  };
+
+  // ---- Clear filter ----
+  const clearFilter = () => {
+    navigate('/blog');
+    setSelectedCategory(null);
+    setSelectedCategoryName(null);
+    resetAndFetch();
+  };
+
   // ---- IntersectionObserver for infinite scroll ----
   useEffect(() => {
     if (loading || !hasMore || loadingMore) return;
@@ -189,7 +204,6 @@ function BlogPage({ isLoggedIn }) {
   // ---- Initial load ----
   useEffect(() => {
     if (!initialLoadDone && !loading) {
-      // Initial load already triggered by resetAndFetch
       setInitialLoadDone(true);
     }
   }, [loading, initialLoadDone]);
@@ -203,25 +217,6 @@ function BlogPage({ isLoggedIn }) {
 
   const handlePostClick = (slug) => {
     navigate(`/blog/post/${slug}`);
-  };
-
-  const handleCategorySelect = (categoryId, categoryName) => {
-    if (categoryId === null) {
-      navigate('/blog');
-      setSelectedCategory(null);
-      setSelectedCategoryName(null);
-      resetAndFetch();
-    } else {
-      const slug = categoryName.toLowerCase().replace(/\s+/g, '-');
-      navigate(`/category/${slug}`);
-    }
-  };
-
-  const clearFilter = () => {
-    navigate('/blog');
-    setSelectedCategory(null);
-    setSelectedCategoryName(null);
-    resetAndFetch();
   };
 
   if (loading && posts.length === 0) {
@@ -404,7 +399,7 @@ function BlogPage({ isLoggedIn }) {
                 <button
                   className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${!selectedCategory ? 'active' : ''}`}
                   style={!selectedCategory ? { backgroundColor: '#07255b', borderColor: '#07255b' } : {}}
-                  onClick={() => handleCategorySelect(null, null)}
+                  onClick={() => handleCategorySelect(null, null, null)}
                 >
                   All Posts
                   <span className="badge bg-secondary rounded-pill">{totalPosts}</span>
@@ -414,7 +409,7 @@ function BlogPage({ isLoggedIn }) {
                     key={cat.id}
                     className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${selectedCategory === cat.id ? 'active' : ''}`}
                     style={selectedCategory === cat.id ? { backgroundColor: '#07255b', borderColor: '#07255b' } : {}}
-                    onClick={() => handleCategorySelect(cat.id, cat.name)}
+                    onClick={() => handleCategorySelect(cat.id, cat.name, cat.slug)}
                   >
                     {cat.name}
                     <span className="badge bg-secondary rounded-pill">{cat.post_count}</span>
