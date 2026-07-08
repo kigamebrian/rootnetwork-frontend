@@ -19,7 +19,6 @@ function BlogPage({ isLoggedIn }) {
   const [totalPages, setTotalPages] = useState(1);
   const [totalPosts, setTotalPosts] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const postsPerPage = 6;
 
   const sentinelRef = useRef(null);
@@ -36,33 +35,24 @@ function BlogPage({ isLoggedIn }) {
   // ---- Handle category change from URL ----
   useEffect(() => {
     if (categories.length > 0 && categorySlug) {
-      // 👇 FIND CATEGORY BY SLUG (from API)
       const category = categories.find(c => c.slug === categorySlug);
-      
       if (category) {
         setSelectedCategory(category.id);
         setSelectedCategoryName(category.name);
-        resetAndFetch();
       } else {
         setSelectedCategory(null);
         setSelectedCategoryName(null);
-        resetAndFetch();
       }
     } else if (!categorySlug) {
       setSelectedCategory(null);
       setSelectedCategoryName(null);
-      resetAndFetch();
     }
   }, [categories, categorySlug]);
 
-  // ---- Reset and fetch first page ----
-  const resetAndFetch = () => {
-    setPosts([]);
-    setCurrentPage(1);
-    setHasMore(true);
-    setInitialLoadDone(false);
-    fetchPosts(1, true);
-  };
+  // ---- Fetch posts when selectedCategory changes ----
+  useEffect(() => {
+    resetAndFetch();
+  }, [selectedCategory]);
 
   // ---- Fetch featured post (only when no category) ----
   useEffect(() => {
@@ -73,8 +63,8 @@ function BlogPage({ isLoggedIn }) {
     }
   }, [selectedCategory]);
 
-  // ---- Fetch posts with pagination (append or replace) ----
-  const fetchPosts = async (page, replace = false) => {
+  // ---- Fetch posts with pagination ----
+  const fetchPosts = async (page, replace = false, categoryId = selectedCategory) => {
     if (page > totalPages && totalPages > 0) {
       setHasMore(false);
       return;
@@ -92,8 +82,8 @@ function BlogPage({ isLoggedIn }) {
         per_page: postsPerPage
       });
       
-      if (selectedCategory) {
-        params.append('category_id', selectedCategory);
+      if (categoryId) {
+        params.append('category_id', categoryId);
       }
       
       const url = `${API_URL}/api/posts?${params.toString()}`;
@@ -120,6 +110,14 @@ function BlogPage({ isLoggedIn }) {
       setLoading(false);
       setLoadingMore(false);
     }
+  };
+
+  // ---- Reset and fetch first page ----
+  const resetAndFetch = () => {
+    setPosts([]);
+    setCurrentPage(1);
+    setHasMore(true);
+    fetchPosts(1, true, selectedCategory);
   };
 
   // ---- Featured post fetch ----
@@ -152,9 +150,6 @@ function BlogPage({ isLoggedIn }) {
   const handleCategorySelect = (categoryId, categoryName, categorySlug) => {
     if (categoryId === null) {
       navigate('/blog');
-      setSelectedCategory(null);
-      setSelectedCategoryName(null);
-      resetAndFetch();
     } else {
       navigate(`/category/${categorySlug}`);
     }
@@ -163,9 +158,6 @@ function BlogPage({ isLoggedIn }) {
   // ---- Clear filter ----
   const clearFilter = () => {
     navigate('/blog');
-    setSelectedCategory(null);
-    setSelectedCategoryName(null);
-    resetAndFetch();
   };
 
   // ---- IntersectionObserver for infinite scroll ----
@@ -181,7 +173,7 @@ function BlogPage({ isLoggedIn }) {
         if (entries[0].isIntersecting && hasMore && !loadingMore) {
           const nextPage = currentPage + 1;
           if (nextPage <= totalPages) {
-            fetchPosts(nextPage, false);
+            fetchPosts(nextPage, false, selectedCategory);
           } else {
             setHasMore(false);
           }
@@ -199,14 +191,7 @@ function BlogPage({ isLoggedIn }) {
         observerRef.current.disconnect();
       }
     };
-  }, [loading, hasMore, loadingMore, currentPage, totalPages]);
-
-  // ---- Initial load ----
-  useEffect(() => {
-    if (!initialLoadDone && !loading) {
-      setInitialLoadDone(true);
-    }
-  }, [loading, initialLoadDone]);
+  }, [loading, hasMore, loadingMore, currentPage, totalPages, selectedCategory]);
 
   // ---- Helpers ----
   const getImageUrl = (imagePath) => {
